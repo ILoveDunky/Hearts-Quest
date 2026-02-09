@@ -6,15 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Heart, Stars, Gamepad2, MessageSquareHeart } from "lucide-react";
-import { suggestAnniversaryQuestions, SuggestAnniversaryQuestionsOutput } from "@/ai/flows/suggest-anniversary-questions";
 
 type GameStep = "start" | "q1" | "s1" | "q2" | "s2" | "q3" | "s3" | "final";
 
 export default function HeartsQuest() {
   const [step, setStep] = useState<GameStep>("start");
   const [answer, setAnswer] = useState("");
-  const [suggestions, setSuggestions] = useState<SuggestAnniversaryQuestionsOutput | null>(null);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const stepsOrder: GameStep[] = ["q1", "q2", "q3", "final"];
   const progress = Math.min(((stepsOrder.indexOf(step as GameStep) + 1) / stepsOrder.length) * 100, 100);
@@ -43,19 +40,6 @@ export default function HeartsQuest() {
     if (normalized.includes("who is you") || normalized.includes("who are you")) {
       setStep("s3");
       setAnswer("");
-    }
-  };
-
-  const getMoreIdeas = async () => {
-    setLoadingSuggestions(true);
-    try {
-      const res = await suggestAnniversaryQuestions({});
-      setSuggestions(res);
-      setStep("final");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoadingSuggestions(false);
     }
   };
 
@@ -179,34 +163,27 @@ export default function HeartsQuest() {
             </div>
             <h2 className="text-4xl font-headline italic">The most important question I ever asked.</h2>
             <Button 
-              onClick={getMoreIdeas} 
-              disabled={loadingSuggestions}
+              onClick={() => setStep("final")} 
               className="bg-accent text-background"
             >
-              {loadingSuggestions ? "Loading Surprise..." : "Finish Quest"}
+              Finish Quest
             </Button>
           </div>
         )}
 
         {step === "final" && (
-          <div className="text-center space-y-8 animate-in fade-in duration-1000 max-w-2xl mx-auto overflow-y-auto max-h-[80vh] scrollbar-hide">
+          <div className="text-center space-y-8 animate-in fade-in duration-1000 max-w-2xl mx-auto">
             <div className="flex justify-center">
                <Stars className="size-24 text-primary animate-pulse" />
             </div>
             <h1 className="text-5xl font-headline text-white">Happy Valentine's Day!</h1>
             <p className="text-primary/80 text-xl">You completed the Hearts Quest. You remember everything perfectly.</p>
             
-            <div className="bg-secondary/20 p-8 rounded-3xl border border-primary/20 text-left space-y-6 shadow-2xl">
-              <h3 className="text-2xl font-headline text-accent border-b border-accent/20 pb-2">Future Quest Ideas</h3>
-              <p className="text-primary/60 text-sm italic">AI generated these extra ideas for our next adventures:</p>
-              <div className="grid gap-4">
-                {suggestions?.questionTopics.map((item, idx) => (
-                  <div key={idx} className="bg-background/50 p-4 rounded-xl border border-primary/10 hover:border-primary/40 transition-colors group">
-                    <h4 className="font-bold text-primary group-hover:text-accent transition-colors">{item.topic}</h4>
-                    <p className="text-sm text-primary/70">{item.description}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="bg-secondary/20 p-8 rounded-3xl border border-primary/20 text-center space-y-6 shadow-2xl">
+              <Heart className="size-16 text-primary mx-auto fill-primary/20" />
+              <p className="text-accent text-2xl font-headline italic">
+                "Every moment with you is a memory I cherish."
+              </p>
             </div>
             
             <Button onClick={() => setStep("start")} variant="ghost" className="text-primary/40 hover:text-primary">Play Again</Button>
