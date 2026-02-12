@@ -35,7 +35,8 @@ type GameStep =
   | "q2" | "s2" 
   | "q3" | "s3" 
   | "customize" | "customize_result" 
-  | "flag_game" | "wheel" 
+  | "flag_game" | "flag_success"
+  | "wheel" 
   | "rate_story" | "compatibility" | "calculating" 
   | "final";
 
@@ -119,7 +120,7 @@ export default function HeartsQuest() {
       setFlagIndex(prev => prev + 1);
     } else {
       setFlagIndex(0);
-      finishNode(6, "flag_game");
+      setStep("flag_success");
     }
   };
 
@@ -413,6 +414,18 @@ export default function HeartsQuest() {
             </div>
           )}
 
+          {step === "flag_success" && (
+            <div className="text-center space-y-12 animate-in zoom-in duration-700 py-12">
+               <div className="flex justify-center relative">
+                  <Heart className="size-48 text-primary fill-primary/30 heart-pulse" />
+                  <Stars className="size-12 absolute top-0 right-0 text-accent animate-spin" />
+               </div>
+               <Button onClick={() => finishNode(5, "flag_game")} className="bg-accent text-background px-12 h-16 text-lg font-bold rounded-full">
+                  Node Synchronized <ArrowRight className="ml-2" />
+               </Button>
+            </div>
+          )}
+
           {/* AFFECTION WHEEL */}
           {step === "wheel" && (
             <div className="space-y-8 animate-in slide-in-from-bottom duration-500 text-center">
@@ -482,7 +495,7 @@ export default function HeartsQuest() {
               <div className="space-y-8 max-h-[50vh] overflow-y-auto pr-4 custom-scrollbar">
                 <div className="space-y-4 bg-secondary/10 p-6 rounded-2xl border border-primary/10">
                   <p className="text-lg font-medium">Pineapple on pizza?</p>
-                  <RadioGroup defaultValue="no">
+                  <RadioGroup defaultValue="yes">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="p1" />
                       <Label htmlFor="p1" className="text-destructive">Yes (Wrong)</Label>
