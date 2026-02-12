@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { StarField } from "@/components/StarField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   XCircle,
   Map as MapIcon,
-  CircleDot,
   Lock,
   ArrowRight
 } from "lucide-react";
@@ -65,8 +64,11 @@ export default function HeartsQuest() {
   const [completedNodes, setCompletedNodes] = useState<GameStep[]>([]);
   const [answer, setAnswer] = useState("");
   const [flagIndex, setFlagIndex] = useState(0);
+  
+  // Wheel State
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelResult, setWheelResult] = useState<string | null>(null);
+  const [rotation, setRotation] = useState(0);
 
   const currentProgress = Math.min(((unlockedIndex) / NODES.length) * 100, 100);
 
@@ -126,19 +128,29 @@ export default function HeartsQuest() {
 
   // Wheel Logic
   const wheelOptions = [
-    "1 full minute of me complimenting you.",
-    "You have to try a stupid pick up line on me.",
+    "1 full minute of compliments",
+    "Try a stupid pick up line",
     "1 hour of Overwatch"
   ];
 
   const spinWheel = () => {
+    if (wheelSpinning) return;
+    
     setWheelSpinning(true);
     setWheelResult(null);
+    
+    // Rotate at least 5 full circles + random segment
+    const segmentAngle = 360 / wheelOptions.length;
+    const randomIndex = Math.floor(Math.random() * wheelOptions.length);
+    const extraRotation = (360 - (randomIndex * segmentAngle)) + (360 * 5); 
+    const newRotation = rotation + extraRotation;
+    
+    setRotation(newRotation);
+
     setTimeout(() => {
-      const result = wheelOptions[Math.floor(Math.random() * wheelOptions.length)];
-      setWheelResult(result);
+      setWheelResult(wheelOptions[randomIndex]);
       setWheelSpinning(false);
-    }, 2000);
+    }, 4000); // Match CSS transition
   };
 
   // Rigged Calculation Logic
@@ -431,34 +443,91 @@ export default function HeartsQuest() {
             <div className="space-y-8 animate-in slide-in-from-bottom duration-500 text-center">
               <div className="space-y-2">
                 <h2 className="text-3xl font-headline uppercase tracking-widest text-primary">Affection Wheel</h2>
-                <p className="text-primary/60">RNG Reward System.</p>
+                <p className="text-primary/60 italic">RNG Reward System.</p>
               </div>
 
-              <div className="relative flex justify-center py-8">
-                <div className={cn(
-                  "size-64 rounded-full border-4 border-primary/30 bg-secondary/10 flex items-center justify-center relative transition-transform duration-[2000ms] ease-out",
-                  wheelSpinning && "animate-spin"
-                )}>
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-1 h-32 bg-accent absolute top-0 origin-bottom" />
-                   </div>
-                   <Stars className="size-12 text-accent" />
+              <div className="relative flex justify-center py-12">
+                {/* WHEEL CONTAINER */}
+                <div className="relative size-80 group">
+                  {/* NEEDLE */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-30 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                    <div className="w-6 h-10 bg-accent clip-path-triangle rotate-180" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+                  </div>
+
+                  {/* THE ACTUAL WHEEL */}
+                  <div 
+                    className="w-full h-full rounded-full border-8 border-primary/20 bg-background overflow-hidden shadow-[0_0_50px_rgba(216,180,254,0.3)] relative"
+                    style={{ 
+                      transform: `rotate(${rotation}deg)`,
+                      transition: 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)'
+                    }}
+                  >
+                    {/* WHEEL SEGMENTS */}
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      {wheelOptions.map((opt, i) => {
+                        const startAngle = (i * 120);
+                        const endAngle = ((i + 1) * 120);
+                        const x1 = 50 + 50 * Math.cos((Math.PI * (startAngle - 90)) / 180);
+                        const y1 = 50 + 50 * Math.sin((Math.PI * (startAngle - 90)) / 180);
+                        const x2 = 50 + 50 * Math.cos((Math.PI * (endAngle - 90)) / 180);
+                        const y2 = 50 + 50 * Math.sin((Math.PI * (endAngle - 90)) / 180);
+                        
+                        return (
+                          <g key={i}>
+                            <path 
+                              d={`M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`}
+                              fill={i === 0 ? 'hsl(var(--primary) / 0.15)' : i === 1 ? 'hsl(var(--accent) / 0.15)' : 'hsl(var(--secondary) / 0.3)'}
+                              stroke="hsl(var(--primary) / 0.3)"
+                              strokeWidth="0.5"
+                            />
+                            {/* SEGMENT TEXT */}
+                            <text 
+                              x="50" y="25" 
+                              transform={`rotate(${startAngle + 60} 50 50)`}
+                              fill="white" 
+                              fontSize="4"
+                              textAnchor="middle"
+                              className="font-bold uppercase tracking-tighter"
+                              style={{ paintOrder: 'stroke', stroke: 'black', strokeWidth: '0.5px' }}
+                            >
+                              {opt}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                    
+                    {/* CENTER BOLT */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="size-8 rounded-full bg-accent border-4 border-background shadow-lg z-10 flex items-center justify-center">
+                        <Stars className="size-4 text-background" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {wheelResult && (
-                <div className="bg-accent/10 border border-accent/20 p-6 rounded-2xl animate-in zoom-in duration-500">
-                  <p className="text-xl font-headline text-accent">{wheelResult}</p>
-                </div>
-              )}
-
-              <Button disabled={wheelSpinning} onClick={spinWheel} className="w-full h-14 bg-accent text-background text-lg font-bold">
-                {wheelSpinning ? "Spooling..." : "Spin"}
-              </Button>
-              
               {wheelResult && !wheelSpinning && (
-                 <Button variant="ghost" onClick={() => finishNode(6, "wheel")} className="text-primary/60">Confirm Reward</Button>
+                <div className="bg-accent/10 border border-accent/20 p-6 rounded-2xl animate-in zoom-in duration-500">
+                  <p className="text-xl font-headline text-accent uppercase tracking-widest">Unlocked: {wheelResult}</p>
+                </div>
               )}
+
+              <div className="space-y-4">
+                <Button 
+                  disabled={wheelSpinning} 
+                  onClick={spinWheel} 
+                  className="w-full h-14 bg-accent text-background text-lg font-bold rounded-full shadow-lg"
+                >
+                  {wheelSpinning ? "Spinning..." : "Spin the Wheel"}
+                </Button>
+                
+                {wheelResult && !wheelSpinning && (
+                   <Button variant="ghost" onClick={() => finishNode(6, "wheel")} className="text-primary/60 hover:text-primary">
+                     Confirm Reward & Continue
+                   </Button>
+                )}
+              </div>
             </div>
           )}
 
@@ -495,7 +564,7 @@ export default function HeartsQuest() {
               <div className="space-y-8 max-h-[50vh] overflow-y-auto pr-4 custom-scrollbar">
                 <div className="space-y-4 bg-secondary/10 p-6 rounded-2xl border border-primary/10">
                   <p className="text-lg font-medium">Pineapple on pizza?</p>
-                  <RadioGroup defaultValue="yes">
+                  <RadioGroup defaultValue="no">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="p1" />
                       <Label htmlFor="p1" className="text-destructive">Yes (Wrong)</Label>
@@ -569,7 +638,7 @@ export default function HeartsQuest() {
                  <p className="text-primary/60 uppercase tracking-widest text-xs">Quest Complete // Memory Archived</p>
               </div>
               
-              <Button onClick={() => { setStep("start"); setUnlockedIndex(0); setCompletedNodes([]); }} variant="ghost" className="text-primary/40 hover:text-primary uppercase tracking-widest text-[10px]">
+              <Button onClick={() => { setStep("start"); setUnlockedIndex(0); setCompletedNodes([]); setRotation(0); setWheelResult(null); }} variant="ghost" className="text-primary/40 hover:text-primary uppercase tracking-widest text-[10px]">
                 Reset Simulation
               </Button>
             </div>
