@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -139,10 +138,17 @@ export default function HeartsQuest() {
     setWheelSpinning(true);
     setWheelResult(null);
     
-    // Rotate at least 5 full circles + random segment
+    // Each segment is 120 degrees
     const segmentAngle = 360 / wheelOptions.length;
     const randomIndex = Math.floor(Math.random() * wheelOptions.length);
-    const extraRotation = (360 - (randomIndex * segmentAngle)) + (360 * 5); 
+    
+    // To land in the CENTER of segment i, we need to rotate to (360 - center_of_segment)
+    // The center of segment i is (i * 120 + 60)
+    const centerOfSegment = (randomIndex * segmentAngle) + (segmentAngle / 2);
+    const targetOffset = 360 - centerOfSegment;
+    
+    // Add at least 5 full circles
+    const extraRotation = targetOffset + (360 * 5); 
     const newRotation = rotation + extraRotation;
     
     setRotation(newRotation);
@@ -150,7 +156,7 @@ export default function HeartsQuest() {
     setTimeout(() => {
       setWheelResult(wheelOptions[randomIndex]);
       setWheelSpinning(false);
-    }, 4000); // Match CSS transition
+    }, 4000);
   };
 
   // Rigged Calculation Logic
@@ -467,6 +473,7 @@ export default function HeartsQuest() {
                       {wheelOptions.map((opt, i) => {
                         const startAngle = (i * 120);
                         const endAngle = ((i + 1) * 120);
+                        const midAngle = startAngle + 60;
                         const x1 = 50 + 50 * Math.cos((Math.PI * (startAngle - 90)) / 180);
                         const y1 = 50 + 50 * Math.sin((Math.PI * (startAngle - 90)) / 180);
                         const x2 = 50 + 50 * Math.cos((Math.PI * (endAngle - 90)) / 180);
@@ -480,12 +487,12 @@ export default function HeartsQuest() {
                               stroke="hsl(var(--primary) / 0.3)"
                               strokeWidth="0.5"
                             />
-                            {/* SEGMENT TEXT */}
+                            {/* SEGMENT TEXT - Rotation and placement improved for visibility */}
                             <text 
-                              x="50" y="25" 
-                              transform={`rotate(${startAngle + 60} 50 50)`}
+                              x="50" y="20" 
+                              transform={`rotate(${midAngle} 50 50)`}
                               fill="white" 
-                              fontSize="4"
+                              fontSize="3.5"
                               textAnchor="middle"
                               className="font-bold uppercase tracking-tighter"
                               style={{ paintOrder: 'stroke', stroke: 'black', strokeWidth: '0.5px' }}
@@ -567,11 +574,11 @@ export default function HeartsQuest() {
                   <RadioGroup defaultValue="no">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="yes" id="p1" />
-                      <Label htmlFor="p1" className="text-destructive">Yes (Wrong)</Label>
+                      <Label htmlFor="p1" className="text-green-500">Yes (Correct)</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="no" id="p2" />
-                      <Label htmlFor="p2" className="text-green-500">No (Correct)</Label>
+                      <Label htmlFor="p2" className="text-destructive">No (Wrong)</Label>
                     </div>
                   </RadioGroup>
                 </div>
