@@ -22,7 +22,9 @@ import {
   XCircle,
   Map as MapIcon,
   Lock,
-  ArrowRight
+  ArrowRight,
+  UserCheck,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +34,7 @@ type GameStep =
   | "q1" | "s1" 
   | "q2" | "s2" 
   | "q3" | "s3" 
+  | "about_me" | "about_me_free" | "about_me_success"
   | "customize" | "customize_result" 
   | "flag_game" | "flag_success"
   | "wheel" 
@@ -50,10 +53,11 @@ const NODES: Node[] = [
   { id: "q1", label: "Matched Profile", icon: Heart, x: 20, y: 30 },
   { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 40, y: 20 },
   { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 60, y: 35 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 80, y: 25 },
-  { id: "flag_game", label: "The Flags", icon: Flag, x: 75, y: 55 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 50, y: 70 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 25, y: 60 },
+  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 80, y: 45 },
+  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 70, y: 15 },
+  { id: "flag_game", label: "The Flags", icon: Flag, x: 50, y: 55 },
+  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 30, y: 75 },
+  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 10, y: 60 },
   { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 15, y: 85 },
 ];
 
@@ -64,6 +68,10 @@ export default function HeartsQuest() {
   const [answer, setAnswer] = useState("");
   const [flagIndex, setFlagIndex] = useState(0);
   
+  // Quiz State
+  const [quizStep, setQuizStep] = useState(0);
+  const [freeQuizStep, setFreeQuizStep] = useState(0);
+
   // Wheel State
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelResult, setWheelResult] = useState<string | null>(null);
@@ -107,6 +115,27 @@ export default function HeartsQuest() {
     }
   };
 
+  // About Me Quiz Handlers
+  const handleAboutMeMC = (correct: boolean) => {
+    if (correct) {
+      if (quizStep < 2) {
+        setQuizStep(prev => prev + 1);
+      } else {
+        setStep("about_me_free");
+      }
+    }
+  };
+
+  const handleAboutMeFree = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (freeQuizStep < 5) {
+      setFreeQuizStep(prev => prev + 1);
+      setAnswer("");
+    } else {
+      setStep("about_me_success");
+    }
+  };
+
   // Flag Game Logic
   const flags = [
     { text: "Insists on splitting the check", ideal: "red" },
@@ -138,16 +167,10 @@ export default function HeartsQuest() {
     setWheelSpinning(true);
     setWheelResult(null);
     
-    // Each segment is 120 degrees
     const segmentAngle = 360 / wheelOptions.length;
     const randomIndex = Math.floor(Math.random() * wheelOptions.length);
-    
-    // To land in the CENTER of segment i, we need to rotate to (360 - center_of_segment)
-    // The center of segment i is (i * 120 + 60)
     const centerOfSegment = (randomIndex * segmentAngle) + (segmentAngle / 2);
     const targetOffset = 360 - centerOfSegment;
-    
-    // Add at least 5 full circles
     const extraRotation = targetOffset + (360 * 5); 
     const newRotation = rotation + extraRotation;
     
@@ -366,6 +389,90 @@ export default function HeartsQuest() {
             </div>
           )}
 
+          {/* ABOUT ME QUIZ */}
+          {step === "about_me" && (
+            <div className="space-y-8 animate-in slide-in-from-right duration-500">
+              <h2 className="text-3xl font-headline text-primary">Testing Your Knowledge...</h2>
+              
+              {quizStep === 0 && (
+                <div className="space-y-6">
+                  <p className="text-xl">Am I a morning person or night person?</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {["Morning", "Night", "Both"].map((opt) => (
+                      <Button key={opt} variant="outline" onClick={() => handleAboutMeMC(opt === "Both")} className="h-14 text-lg border-primary/20 hover:bg-primary/10">
+                        {opt}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {quizStep === 1 && (
+                <div className="space-y-6">
+                  <p className="text-xl">What is my biggest fear?</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {["Spiders", "Heights", "Rejection"].map((opt) => (
+                      <Button key={opt} variant="outline" onClick={() => handleAboutMeMC(opt === "Rejection")} className="h-14 text-lg border-primary/20 hover:bg-primary/10">
+                        {opt}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {quizStep === 2 && (
+                <div className="space-y-6">
+                  <p className="text-xl">What is my favorite joke?</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      "Crazy? I was crazy once. They locked me in a room a rubber room a rubber room with rats and rats make me crazy.",
+                      "6", "7", "6", "7", "6"
+                    ].map((opt, i) => (
+                      <Button key={i} variant="outline" onClick={() => handleAboutMeMC(opt.startsWith("Crazy"))} className="h-auto py-4 text-left px-6 border-primary/20 hover:bg-primary/10">
+                        {opt}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === "about_me_free" && (
+            <div className="space-y-8 animate-in slide-in-from-bottom duration-500">
+              <h2 className="text-3xl font-headline text-accent">The Vibe Checks</h2>
+              
+              <div className="space-y-6">
+                <p className="text-xl italic">
+                  {freeQuizStep === 0 && "If I were a dog breed what would I be?"}
+                  {freeQuizStep === 1 && "If I were a cat what color would I be?"}
+                  {freeQuizStep === 2 && "If I were a color what color would I be?"}
+                  {freeQuizStep === 3 && "Who would play me in a movie about me?"}
+                  {freeQuizStep === 4 && "If I were a kitchen appliance what appliance would I be?"}
+                  {freeQuizStep === 5 && "On a scale of 1-10 how likely would it be that I would survive a horror movie?"}
+                </p>
+                <form onSubmit={handleAboutMeFree} className="space-y-4">
+                  <Input 
+                    autoFocus
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    placeholder="Tell me your thoughts..."
+                    className="bg-secondary/20 border-primary/30 h-16 text-xl rounded-xl"
+                  />
+                  <Button type="submit" className="w-full h-14 bg-accent text-background text-lg font-bold">Next Question</Button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {step === "about_me_success" && (
+            <div className="text-center space-y-8 animate-in zoom-in duration-700">
+              <Zap className="size-24 text-accent mx-auto animate-pulse" />
+              <h2 className="text-4xl font-headline italic">You know me better than anyone.</h2>
+              <Button onClick={() => finishNode(4, "about_me")} className="bg-accent text-background">Node Synchronized <ArrowRight className="ml-2" /></Button>
+            </div>
+          )}
+
           {/* CUSTOMIZE BOYFRIEND */}
           {step === "customize" && (
             <div className="space-y-8 animate-in slide-in-from-right duration-500">
@@ -403,7 +510,7 @@ export default function HeartsQuest() {
                 <p className="text-5xl font-headline text-white">You have created: Me.</p>
                 <p className="text-primary/60 italic text-xl">Unfortunately this version is permanent.</p>
               </div>
-              <Button onClick={() => finishNode(4, "customize")} className="bg-accent text-background">Accept Fate</Button>
+              <Button onClick={() => finishNode(5, "customize")} className="bg-accent text-background">Accept Fate</Button>
             </div>
           )}
 
@@ -438,7 +545,7 @@ export default function HeartsQuest() {
                   <Heart className="size-48 text-primary fill-primary/30 heart-pulse" />
                   <Stars className="size-12 absolute top-0 right-0 text-accent animate-spin" />
                </div>
-               <Button onClick={() => finishNode(5, "flag_game")} className="bg-accent text-background px-12 h-16 text-lg font-bold rounded-full">
+               <Button onClick={() => finishNode(6, "flag_game")} className="bg-accent text-background px-12 h-16 text-lg font-bold rounded-full">
                   Node Synchronized <ArrowRight className="ml-2" />
                </Button>
             </div>
@@ -453,14 +560,11 @@ export default function HeartsQuest() {
               </div>
 
               <div className="relative flex justify-center py-12">
-                {/* WHEEL CONTAINER */}
                 <div className="relative size-80 group">
-                  {/* NEEDLE */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-30 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
                     <div className="w-6 h-10 bg-accent clip-path-triangle rotate-180" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
                   </div>
 
-                  {/* THE ACTUAL WHEEL */}
                   <div 
                     className="w-full h-full rounded-full border-8 border-primary/20 bg-background overflow-hidden shadow-[0_0_50px_rgba(216,180,254,0.3)] relative"
                     style={{ 
@@ -468,7 +572,6 @@ export default function HeartsQuest() {
                       transition: 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)'
                     }}
                   >
-                    {/* WHEEL SEGMENTS */}
                     <svg viewBox="0 0 100 100" className="w-full h-full">
                       {wheelOptions.map((opt, i) => {
                         const startAngle = (i * 120);
@@ -487,7 +590,6 @@ export default function HeartsQuest() {
                               stroke="hsl(var(--primary) / 0.3)"
                               strokeWidth="0.5"
                             />
-                            {/* SEGMENT TEXT - Rotation and placement improved for visibility */}
                             <text 
                               x="50" y="20" 
                               transform={`rotate(${midAngle} 50 50)`}
@@ -504,7 +606,6 @@ export default function HeartsQuest() {
                       })}
                     </svg>
                     
-                    {/* CENTER BOLT */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="size-8 rounded-full bg-accent border-4 border-background shadow-lg z-10 flex items-center justify-center">
                         <Stars className="size-4 text-background" />
@@ -530,7 +631,7 @@ export default function HeartsQuest() {
                 </Button>
                 
                 {wheelResult && !wheelSpinning && (
-                   <Button variant="ghost" onClick={() => finishNode(6, "wheel")} className="text-primary/60 hover:text-primary">
+                   <Button variant="ghost" onClick={() => finishNode(7, "wheel")} className="text-primary/60 hover:text-primary">
                      Confirm Reward & Continue
                    </Button>
                 )}
@@ -553,7 +654,7 @@ export default function HeartsQuest() {
                     <Slider defaultValue={[50]} max={100} step={1} />
                   </div>
                 ))}
-                <Button onClick={() => finishNode(7, "rate_story")} className="w-full h-14 bg-accent text-background text-lg font-bold">
+                <Button onClick={() => finishNode(8, "rate_story")} className="w-full h-14 bg-accent text-background text-lg font-bold">
                   Finalize Tropes
                 </Button>
               </div>
@@ -573,12 +674,12 @@ export default function HeartsQuest() {
                   <p className="text-lg font-medium">Pineapple on pizza?</p>
                   <RadioGroup defaultValue="no">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="p1" />
-                      <Label htmlFor="p1" className="text-green-500">Yes (Correct)</Label>
+                      <RadioGroupItem value="no" id="p2" />
+                      <Label htmlFor="p2" className="text-green-500">No (Correct)</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="p2" />
-                      <Label htmlFor="p2" className="text-destructive">No (Wrong)</Label>
+                      <RadioGroupItem value="yes" id="p1" />
+                      <Label htmlFor="p1" className="text-destructive">Yes (Wrong)</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -645,7 +746,7 @@ export default function HeartsQuest() {
                  <p className="text-primary/60 uppercase tracking-widest text-xs">Quest Complete // Memory Archived</p>
               </div>
               
-              <Button onClick={() => { setStep("start"); setUnlockedIndex(0); setCompletedNodes([]); setRotation(0); setWheelResult(null); }} variant="ghost" className="text-primary/40 hover:text-primary uppercase tracking-widest text-[10px]">
+              <Button onClick={() => { setStep("start"); setUnlockedIndex(0); setCompletedNodes([]); setRotation(0); setWheelResult(null); setQuizStep(0); setFreeQuizStep(0); }} variant="ghost" className="text-primary/40 hover:text-primary uppercase tracking-widest text-[10px]">
                 Reset Simulation
               </Button>
             </div>
