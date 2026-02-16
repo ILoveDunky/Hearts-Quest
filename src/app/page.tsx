@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { StarField } from "@/components/StarField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,20 +54,22 @@ interface Node {
   y: number; // percentage
 }
 
-// Perfect Circular Layout (11 Nodes)
+// Precise Circular Layout (11 Nodes)
 // Center: (50, 50), Radius: 35
+// Calculated using polar coordinates: x = 50 + 35 * cos(theta), y = 50 + 35 * sin(theta)
+// Starting from -90 degrees (top)
 const NODES: Node[] = [
   { id: "q1", label: "Matched Profile", icon: Heart, x: 50, y: 15 },
-  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 69, y: 21 },
-  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 82, y: 35 },
-  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 85, y: 55 },
-  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 76, y: 73 },
-  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 60, y: 84 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 40, y: 84 },
-  { id: "flag_game", label: "Flag Check", icon: Flag, x: 24, y: 73 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15, y: 55 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 18, y: 35 },
-  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 31, y: 21 },
+  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 68.9, y: 20.6 },
+  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 81.8, y: 35.5 },
+  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 84.6, y: 54.9 },
+  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 76.5, y: 72.9 },
+  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 59.9, y: 83.6 },
+  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 40.1, y: 83.6 },
+  { id: "flag_game", label: "Flag Check", icon: Flag, x: 23.6, y: 72.9 },
+  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15.4, y: 54.9 },
+  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 18.1, y: 35.5 },
+  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 31.0, y: 20.6 },
 ];
 
 export default function HeartsQuest() {
@@ -264,40 +266,17 @@ export default function HeartsQuest() {
     }
   }, [step]);
 
-  // Generate Path String (Circle)
-  const pathD = NODES.reduce((acc, node, i) => {
-    if (i === 0) return `M ${node.x} ${node.y}`;
-    return `${acc} L ${node.x} ${node.y}`;
-  }, "") + " Z"; // Close the loop for a perfect circle appearance
+  // Generate Path String (Polygon connection)
+  const pathD = useMemo(() => {
+    return NODES.reduce((acc, node, i) => {
+      if (i === 0) return `M ${node.x} ${node.y}`;
+      return `${acc} L ${node.x} ${node.y}`;
+    }, "") + " Z";
+  }, []);
 
   return (
     <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-1000 overflow-hidden">
       <StarField intensity={step === "map" || step === "final" || step === "calculating" ? "high" : "normal"} />
-
-      {/* STAR CHART CONSTELLATION LINES (Circular Path) */}
-      {step === "map" && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path 
-            d={pathD}
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="0.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            className="opacity-20 constellation-line"
-          />
-          {/* Pulsing Active Segment */}
-          {unlockedIndex > 0 && unlockedIndex < NODES.length && (
-            <path 
-              d={`M ${NODES[unlockedIndex-1].x} ${NODES[unlockedIndex-1].y} L ${NODES[unlockedIndex].x} ${NODES[unlockedIndex].y}`}
-              fill="none"
-              stroke="hsl(var(--accent))"
-              strokeWidth="0.8"
-              className="animate-pulse opacity-60"
-            />
-          )}
-        </svg>
-      )}
 
       <div className="z-10 w-full max-w-4xl py-12 h-full flex flex-col justify-center">
         
@@ -335,14 +314,43 @@ export default function HeartsQuest() {
 
         {/* CONSTELLATION MAP */}
         {step === "map" && (
-          <div className="relative w-full aspect-square md:aspect-video animate-in fade-in zoom-in duration-1000">
+          <div className="relative w-full max-w-[500px] aspect-square mx-auto animate-in fade-in zoom-in duration-1000">
+            {/* SVG Lines */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
+              {/* Perfect Faint Background Circle */}
+              <circle cx="50" cy="50" r="35" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.2" className="opacity-10" />
+              
+              {/* Polished Connection Line */}
+              <path 
+                d={pathD}
+                fill="none"
+                stroke="hsl(var(--primary))"
+                strokeWidth="0.5"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                className="opacity-20 constellation-line"
+              />
+              
+              {/* Pulsing Active Segment */}
+              {unlockedIndex > 0 && unlockedIndex < NODES.length && (
+                <path 
+                  d={`M ${NODES[unlockedIndex-1].x} ${NODES[unlockedIndex-1].y} L ${NODES[unlockedIndex].x} ${NODES[unlockedIndex].y}`}
+                  fill="none"
+                  stroke="hsl(var(--accent))"
+                  strokeWidth="0.8"
+                  className="animate-pulse opacity-60"
+                />
+              )}
+            </svg>
+
+            {/* Central Icon */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center space-y-2 opacity-20">
-                <MapIcon className="size-12 mx-auto text-primary" />
-                <p className="text-xs uppercase tracking-[0.3em] font-bold">Follow the Path</p>
+                <MapIcon className="size-8 mx-auto text-primary" />
               </div>
             </div>
 
+            {/* Nodes */}
             {NODES.map((node, index) => {
               const isUnlocked = index <= unlockedIndex;
               const isCompleted = completedNodes.includes(node.id);
@@ -361,17 +369,17 @@ export default function HeartsQuest() {
                   )}
                 >
                   <div className={cn(
-                    "size-12 rounded-full flex items-center justify-center border-2 transition-all duration-500 relative",
+                    "size-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 relative",
                     isCompleted ? "bg-primary/20 border-primary text-primary" : "border-primary/40 bg-background text-primary/40",
                     isActive && "border-accent text-accent node-pulse scale-125 z-20 shadow-[0_0_20px_rgba(216,180,254,0.5)]"
                   )}>
-                    {isUnlocked ? <node.icon className="size-5" /> : <Lock className="size-4" />}
+                    {isUnlocked ? <node.icon className="size-4" /> : <Lock className="size-3" />}
                     {isActive && (
                       <div className="absolute -inset-2 border border-accent/30 rounded-full animate-ping" />
                     )}
                   </div>
                   <span className={cn(
-                    "mt-3 text-[9px] uppercase font-bold tracking-widest whitespace-nowrap transition-all",
+                    "mt-3 text-[8px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-all",
                     isActive ? "text-accent opacity-100 translate-y-0" : "text-primary/40 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"
                   )}>
                     {node.label}
@@ -384,7 +392,7 @@ export default function HeartsQuest() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <Button 
                   onClick={() => setStep("final")}
-                  className="px-16 py-10 bg-accent text-background rounded-full font-bold animate-pulse shadow-[0_0_50px_rgba(230,230,250,0.6)] text-xl uppercase tracking-widest"
+                  className="px-12 py-8 bg-accent text-background rounded-full font-bold animate-pulse shadow-[0_0_50px_rgba(230,230,250,0.6)] text-lg uppercase tracking-widest"
                 >
                   Final Destiny
                 </Button>
