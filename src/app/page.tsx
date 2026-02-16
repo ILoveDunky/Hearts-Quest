@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -54,17 +55,17 @@ interface Node {
 }
 
 const NODES: Node[] = [
-  { id: "q1", label: "Matched Profile", icon: Heart, x: 20, y: 30 },
-  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 40, y: 20 },
-  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 60, y: 35 },
-  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 80, y: 25 },
-  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 85, y: 50 },
-  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 70, y: 70 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 50, y: 85 },
-  { id: "flag_game", label: "The Flags", icon: Flag, x: 30, y: 75 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15, y: 65 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 10, y: 40 },
-  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 25, y: 15 },
+  { id: "q1", label: "Matched Profile", icon: Heart, x: 15, y: 75 },
+  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 30, y: 60 },
+  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 45, y: 70 },
+  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 60, y: 55 },
+  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 75, y: 65 },
+  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 85, y: 45 },
+  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 75, y: 25 },
+  { id: "flag_game", label: "The Flags", icon: Flag, x: 55, y: 35 },
+  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 35, y: 20 },
+  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 15, y: 30 },
+  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 30, y: 45 },
 ];
 
 export default function HeartsQuest() {
@@ -286,25 +287,30 @@ export default function HeartsQuest() {
 
       {/* BACKGROUND MAP LINES */}
       {step === "map" && (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
           {NODES.map((node, i) => {
             if (i === 0) return null;
             const prev = NODES[i - 1];
+            const isUnlocked = unlockedIndex >= i;
             return (
               <line 
                 key={i}
                 x1={`${prev.x}%`} y1={`${prev.y}%`}
                 x2={`${node.x}%`} y2={`${node.y}%`}
-                stroke="white"
+                stroke={isUnlocked ? "hsl(var(--primary))" : "white"}
                 strokeWidth="2"
-                className={cn("constellation-line", unlockedIndex < i && "opacity-20")}
+                className={cn(
+                  "constellation-line", 
+                  isUnlocked ? "opacity-40" : "opacity-10",
+                  isUnlocked && "animate-pulse"
+                )}
               />
             );
           })}
         </svg>
       )}
 
-      <div className="z-10 w-full max-w-2xl py-12 h-full flex flex-col justify-center">
+      <div className="z-10 w-full max-w-4xl py-12 h-full flex flex-col justify-center">
         
         {/* PROGRESS HEADER */}
         {step !== "start" && step !== "final" && step !== "calculating" && (
@@ -323,7 +329,7 @@ export default function HeartsQuest() {
             <div className="flex justify-center mb-4">
               <div className="relative">
                 <Heart className="size-24 text-primary fill-primary/20 heart-pulse" />
-                <stars className="size-8 absolute -top-2 -right-2 text-accent" />
+                <Stars className="size-8 absolute -top-2 -right-2 text-accent" />
               </div>
             </div>
             <h1 className="text-6xl font-headline tracking-tighter text-white">Hearts Quest</h1>
@@ -342,7 +348,7 @@ export default function HeartsQuest() {
         {step === "map" && (
           <div className="relative w-full aspect-square md:aspect-video animate-in fade-in zoom-in duration-1000">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center space-y-2 opacity-40">
+              <div className="text-center space-y-2 opacity-20">
                 <MapIcon className="size-12 mx-auto text-primary" />
                 <p className="text-xs uppercase tracking-[0.3em] font-bold">Select Active Node</p>
               </div>
@@ -386,12 +392,14 @@ export default function HeartsQuest() {
             })}
 
             {unlockedIndex === NODES.length && (
-              <Button 
-                onClick={() => setStep("final")}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-12 py-8 bg-accent text-background rounded-full font-bold animate-pulse shadow-[0_0_50px_rgba(230,230,250,0.6)]"
-              >
-                FINAL DESTINY
-              </Button>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Button 
+                  onClick={() => setStep("final")}
+                  className="px-16 py-10 bg-accent text-background rounded-full font-bold animate-pulse shadow-[0_0_50px_rgba(230,230,250,0.6)] text-xl uppercase tracking-widest"
+                >
+                  Final Destiny
+                </Button>
+              </div>
             )}
           </div>
         )}
