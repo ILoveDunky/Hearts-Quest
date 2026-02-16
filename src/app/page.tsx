@@ -54,18 +54,19 @@ interface Node {
   y: number; // percentage
 }
 
+// Structured Star Chart Flow
 const NODES: Node[] = [
-  { id: "q1", label: "Matched Profile", icon: Heart, x: 15, y: 75 },
-  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 30, y: 60 },
-  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 45, y: 70 },
-  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 60, y: 55 },
-  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 75, y: 65 },
-  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 85, y: 45 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 75, y: 25 },
-  { id: "flag_game", label: "The Flags", icon: Flag, x: 55, y: 35 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 35, y: 20 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 15, y: 30 },
-  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 30, y: 45 },
+  { id: "q1", label: "Matched Profile", icon: Heart, x: 10, y: 80 },
+  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 25, y: 70 },
+  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 45, y: 75 },
+  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 65, y: 70 },
+  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 85, y: 65 },
+  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 80, y: 45 },
+  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 60, y: 40 },
+  { id: "flag_game", label: "Flag Check", icon: Flag, x: 40, y: 45 },
+  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 20, y: 40 },
+  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 30, y: 20 },
+  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 55, y: 20 },
 ];
 
 export default function HeartsQuest() {
@@ -160,20 +161,20 @@ export default function HeartsQuest() {
       const delta = now - lastTime;
       lastTime = now;
 
-      // Update Score
+      // Update Score - fast points, slow scroll feel
       setDinoScore(prev => {
         if (prev >= 6767) return 6767;
-        return prev + 13; // Fast counting
+        return prev + 18; 
       });
 
       // Update Obstacles
       setObstacles(prev => {
-        const moved = prev.map(o => ({ ...o, left: o.left - 0.2 * delta }));
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.15 * delta }));
         return moved.filter(o => o.left > -20);
       });
 
       obstacleTimer += delta;
-      if (obstacleTimer > 2000) {
+      if (obstacleTimer > 2500) {
         setObstacles(prev => [
           ...prev,
           { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
@@ -190,7 +191,7 @@ export default function HeartsQuest() {
 
   useEffect(() => {
     if (dinoScore >= 6767 && step === "dino_game") {
-      setTimeout(() => finishNode(6, "dino_game"), 1000);
+      setTimeout(() => finishNode(6, "dino_game"), 1500);
     }
   }, [dinoScore, step]);
 
@@ -201,7 +202,7 @@ export default function HeartsQuest() {
     setTimeout(() => {
       setDinoY(0);
       setIsJumping(false);
-    }, 600);
+    }, 700);
   };
 
   // About Me Quiz Handlers
@@ -285,7 +286,7 @@ export default function HeartsQuest() {
     <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-1000 overflow-hidden">
       <StarField intensity={step === "map" || step === "final" || step === "calculating" ? "high" : "normal"} />
 
-      {/* BACKGROUND MAP LINES */}
+      {/* STAR CHART CONSTELLATION LINES */}
       {step === "map" && (
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
           {NODES.map((node, i) => {
@@ -301,7 +302,7 @@ export default function HeartsQuest() {
                 strokeWidth="2"
                 className={cn(
                   "constellation-line", 
-                  isUnlocked ? "opacity-40" : "opacity-10",
+                  isUnlocked ? "opacity-30" : "opacity-5",
                   isUnlocked && "animate-pulse"
                 )}
               />
@@ -316,7 +317,7 @@ export default function HeartsQuest() {
         {step !== "start" && step !== "final" && step !== "calculating" && (
           <div className="fixed top-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 space-y-2 z-50">
             <div className="flex justify-between items-center text-primary/60 text-[10px] uppercase tracking-widest font-bold">
-              <span>Star System Synced</span>
+              <span>Nebula Sync Status</span>
               <span>{Math.round(currentProgress)}%</span>
             </div>
             <Progress value={currentProgress} className="h-1 bg-secondary/30" />
@@ -367,7 +368,7 @@ export default function HeartsQuest() {
                   style={{ left: `${node.x}%`, top: `${node.y}%` }}
                   className={cn(
                     "absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 group",
-                    !isUnlocked && "opacity-30 grayscale cursor-not-allowed",
+                    !isUnlocked && "opacity-20 grayscale cursor-not-allowed",
                     isUnlocked && "hover:scale-110"
                   )}
                 >
@@ -504,8 +505,8 @@ export default function HeartsQuest() {
                   <Heart 
                     className="text-primary fill-primary/40 drop-shadow-[0_0_15px_rgba(216,180,254,0.5)]" 
                     style={{ 
-                      width: `${Math.max(100 - chaseCount * 15, 30)}px`, 
-                      height: `${Math.max(100 - chaseCount * 15, 30)}px` 
+                      width: `${Math.max(100 - chaseCount * 12, 30)}px`, 
+                      height: `${Math.max(100 - chaseCount * 12, 30)}px` 
                     }} 
                   />
                   {chaseCount === 0 && (
