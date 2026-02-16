@@ -54,19 +54,19 @@ interface Node {
   y: number; // percentage
 }
 
-// Structured Star Chart Flow
+// Heart-Shaped Star Chart Flow
 const NODES: Node[] = [
-  { id: "q1", label: "Matched Profile", icon: Heart, x: 10, y: 80 },
-  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 25, y: 70 },
-  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 45, y: 75 },
-  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 65, y: 70 },
-  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 85, y: 65 },
-  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 80, y: 45 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 60, y: 40 },
-  { id: "flag_game", label: "Flag Check", icon: Flag, x: 40, y: 45 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 20, y: 40 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 30, y: 20 },
-  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 55, y: 20 },
+  { id: "q1", label: "Matched Profile", icon: Heart, x: 50, y: 80 },
+  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 38, y: 72 },
+  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 28, y: 60 },
+  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 25, y: 45 },
+  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 35, y: 25 },
+  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 50, y: 40 },
+  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 65, y: 25 },
+  { id: "flag_game", label: "Flag Check", icon: Flag, x: 75, y: 45 },
+  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 72, y: 60 },
+  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 62, y: 72 },
+  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 55, y: 78 },
 ];
 
 export default function HeartsQuest() {
