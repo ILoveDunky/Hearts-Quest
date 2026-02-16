@@ -54,19 +54,20 @@ interface Node {
   y: number; // percentage
 }
 
-// Refined Heart-Shaped Coordinates (11 Nodes)
+// Perfect Circular Layout (11 Nodes)
+// Center: (50, 50), Radius: 35
 const NODES: Node[] = [
-  { id: "q1", label: "Matched Profile", icon: Heart, x: 50, y: 85 },
-  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 30, y: 75 },
-  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 18, y: 55 },
-  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 15, y: 35 },
-  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 30, y: 20 },
-  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 50, y: 35 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 70, y: 20 },
-  { id: "flag_game", label: "Flag Check", icon: Flag, x: 85, y: 35 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 82, y: 55 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 70, y: 75 },
-  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 55, y: 82 },
+  { id: "q1", label: "Matched Profile", icon: Heart, x: 50, y: 15 },
+  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 69, y: 21 },
+  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 82, y: 35 },
+  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 85, y: 55 },
+  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 76, y: 73 },
+  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 60, y: 84 },
+  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 40, y: 84 },
+  { id: "flag_game", label: "Flag Check", icon: Flag, x: 24, y: 73 },
+  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15, y: 55 },
+  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 18, y: 35 },
+  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 31, y: 21 },
 ];
 
 export default function HeartsQuest() {
@@ -263,21 +264,21 @@ export default function HeartsQuest() {
     }
   }, [step]);
 
-  // Generate Heart Path String
-  const heartPathD = NODES.reduce((acc, node, i) => {
+  // Generate Path String (Circle)
+  const pathD = NODES.reduce((acc, node, i) => {
     if (i === 0) return `M ${node.x} ${node.y}`;
     return `${acc} L ${node.x} ${node.y}`;
-  }, "");
+  }, "") + " Z"; // Close the loop for a perfect circle appearance
 
   return (
     <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-1000 overflow-hidden">
       <StarField intensity={step === "map" || step === "final" || step === "calculating" ? "high" : "normal"} />
 
-      {/* STAR CHART CONSTELLATION LINES (Heart Shaped Path) */}
+      {/* STAR CHART CONSTELLATION LINES (Circular Path) */}
       {step === "map" && (
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
           <path 
-            d={heartPathD}
+            d={pathD}
             fill="none"
             stroke="hsl(var(--primary))"
             strokeWidth="0.5"
@@ -338,7 +339,7 @@ export default function HeartsQuest() {
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center space-y-2 opacity-20">
                 <MapIcon className="size-12 mx-auto text-primary" />
-                <p className="text-xs uppercase tracking-[0.3em] font-bold">Follow the Heart</p>
+                <p className="text-xs uppercase tracking-[0.3em] font-bold">Follow the Path</p>
               </div>
             </div>
 
