@@ -135,7 +135,7 @@ export default function HeartsQuest() {
   };
 
   const handleChaseClick = () => {
-    if (chaseCount < 6) {
+    if (chaseCount < 5) {
       setChaseCount(prev => prev + 1);
       const newTop = Math.random() * 70 + 15;
       const newLeft = Math.random() * 70 + 15;
@@ -160,15 +160,15 @@ export default function HeartsQuest() {
 
       setDinoScore(prev => {
         if (prev >= 6767) return 6767;
-        return prev + 5; // Slower point progression
+        return prev + 8; // Tuned for ~15-20 seconds to reach goal
       });
 
       setObstacles(prev => {
-        const moved = prev.map(o => ({ ...o, left: o.left - 0.06 * delta })); // Slower obstacle movement
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.05 * delta }));
         
         // Collision Detection
         moved.forEach(o => {
-          if (o.left > 8 && o.left < 15 && dinoY < 30) {
+          if (o.left > 8 && o.left < 15 && dinoY < 40) {
             setIsHurt(true);
             setTimeout(() => setIsHurt(false), 300);
           }
@@ -178,7 +178,7 @@ export default function HeartsQuest() {
       });
 
       obstacleTimer += delta;
-      if (obstacleTimer > 3500) { // Slower obstacle spawning for readability
+      if (obstacleTimer > 3500) {
         setObstacles(prev => [
           ...prev,
           { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
@@ -200,7 +200,7 @@ export default function HeartsQuest() {
   const handleJump = () => {
     if (isJumping) return;
     setIsJumping(true);
-    setDinoY(120);
+    setDinoY(130);
     setTimeout(() => {
       setDinoY(0);
       setIsJumping(false);
@@ -287,7 +287,7 @@ export default function HeartsQuest() {
   return (
     <main className={cn(
       "relative min-h-screen flex items-center justify-center p-6 transition-all duration-300 overflow-hidden",
-      isHurt ? "bg-destructive/20" : "bg-background"
+      isHurt ? "bg-destructive/20" : "bg-transparent"
     )}>
       <StarField intensity={step === "map" || step === "final" || step === "calculating" ? "high" : "normal"} />
 
@@ -449,7 +449,7 @@ export default function HeartsQuest() {
               </div>
               <button 
                 onClick={handleChaseClick} 
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all cursor-pointer"
                 style={{ 
                   top: heartPos.top, 
                   left: heartPos.left,
