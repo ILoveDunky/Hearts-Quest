@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { StarField } from "@/components/StarField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,9 @@ import {
   Lock,
   ArrowRight,
   UserCheck,
-  Zap
+  Zap,
+  MousePointer2,
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +36,9 @@ type GameStep =
   | "q1" | "s1" 
   | "q2" | "s2" 
   | "q3" | "s3" 
+  | "chase_heart"
   | "about_me" | "about_me_free" | "about_me_success"
+  | "dino_game"
   | "customize" | "customize_result" 
   | "flag_game" | "flag_success"
   | "wheel" 
@@ -53,12 +57,14 @@ const NODES: Node[] = [
   { id: "q1", label: "Matched Profile", icon: Heart, x: 20, y: 30 },
   { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 40, y: 20 },
   { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 60, y: 35 },
-  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 80, y: 45 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 70, y: 15 },
-  { id: "flag_game", label: "The Flags", icon: Flag, x: 50, y: 55 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 30, y: 75 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 10, y: 60 },
-  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 15, y: 85 },
+  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 80, y: 25 },
+  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 85, y: 50 },
+  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 70, y: 70 },
+  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 50, y: 85 },
+  { id: "flag_game", label: "The Flags", icon: Flag, x: 30, y: 75 },
+  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15, y: 65 },
+  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 10, y: 40 },
+  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 25, y: 15 },
 ];
 
 export default function HeartsQuest() {
@@ -76,6 +82,17 @@ export default function HeartsQuest() {
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelResult, setWheelResult] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
+
+  // Chasing Heart State
+  const [chaseCount, setChaseCount] = useState(0);
+  const [heartPos, setHeartPos] = useState({ top: "50%", left: "50%" });
+
+  // Dino Game State
+  const [dinoScore, setDinoScore] = useState(0);
+  const [dinoY, setDinoY] = useState(0);
+  const [isJumping, setIsJumping] = useState(false);
+  const [obstacles, setObstacles] = useState<{ id: number; left: number; text: string }[]>([]);
+  const dinoGameActive = step === "dino_game";
 
   const currentProgress = Math.min(((unlockedIndex) / NODES.length) * 100, 100);
 
@@ -113,6 +130,77 @@ export default function HeartsQuest() {
       setStep("s3");
       setAnswer("");
     }
+  };
+
+  // Chase Heart Logic
+  const handleChaseClick = () => {
+    if (chaseCount < 6) {
+      setChaseCount(prev => prev + 1);
+      const newTop = Math.random() * 70 + 15;
+      const newLeft = Math.random() * 70 + 15;
+      setHeartPos({ top: `${newTop}%`, left: `${newLeft}%` });
+    } else {
+      finishNode(4, "chase_heart");
+      setChaseCount(0);
+    }
+  };
+
+  // Dino Game Logic
+  useEffect(() => {
+    if (!dinoGameActive) return;
+
+    const obstacleTexts = ["Bad Wi-fi", "Work Schedule", "11 Hour Drive", "Bad Overwatch Teammates"];
+    let frameId: number;
+    let lastTime = Date.now();
+    let obstacleTimer = 0;
+
+    const gameLoop = () => {
+      const now = Date.now();
+      const delta = now - lastTime;
+      lastTime = now;
+
+      // Update Score
+      setDinoScore(prev => {
+        if (prev >= 6767) return 6767;
+        return prev + 13; // Fast counting
+      });
+
+      // Update Obstacles
+      setObstacles(prev => {
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.2 * delta }));
+        return moved.filter(o => o.left > -20);
+      });
+
+      obstacleTimer += delta;
+      if (obstacleTimer > 2000) {
+        setObstacles(prev => [
+          ...prev,
+          { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
+        ]);
+        obstacleTimer = 0;
+      }
+
+      frameId = requestAnimationFrame(gameLoop);
+    };
+
+    frameId = requestAnimationFrame(gameLoop);
+    return () => cancelAnimationFrame(frameId);
+  }, [dinoGameActive]);
+
+  useEffect(() => {
+    if (dinoScore >= 6767 && step === "dino_game") {
+      setTimeout(() => finishNode(6, "dino_game"), 1000);
+    }
+  }, [dinoScore, step]);
+
+  const handleJump = () => {
+    if (isJumping) return;
+    setIsJumping(true);
+    setDinoY(100);
+    setTimeout(() => {
+      setDinoY(0);
+      setIsJumping(false);
+    }, 600);
   };
 
   // About Me Quiz Handlers
@@ -235,7 +323,7 @@ export default function HeartsQuest() {
             <div className="flex justify-center mb-4">
               <div className="relative">
                 <Heart className="size-24 text-primary fill-primary/20 heart-pulse" />
-                <Stars className="size-8 absolute -top-2 -right-2 text-accent" />
+                <stars className="size-8 absolute -top-2 -right-2 text-accent" />
               </div>
             </div>
             <h1 className="text-6xl font-headline tracking-tighter text-white">Hearts Quest</h1>
@@ -389,6 +477,37 @@ export default function HeartsQuest() {
             </div>
           )}
 
+          {/* FLEETING HEART CHASE */}
+          {step === "chase_heart" && (
+            <div className="relative w-full h-[60vh] bg-secondary/10 rounded-3xl border border-primary/20 overflow-hidden animate-in fade-in duration-500">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center">
+                <p className="text-xs uppercase tracking-widest text-primary/60">Catch the heart</p>
+                <p className="text-2xl font-headline text-white">{6 - chaseCount} more times</p>
+              </div>
+              <button
+                onClick={handleChaseClick}
+                className="absolute transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 active:scale-95 group"
+                style={{
+                  top: heartPos.top,
+                  left: heartPos.left,
+                }}
+              >
+                <div className="relative flex items-center justify-center">
+                  <Heart 
+                    className="text-primary fill-primary/40 drop-shadow-[0_0_15px_rgba(216,180,254,0.5)]" 
+                    style={{ 
+                      width: `${Math.max(100 - chaseCount * 15, 30)}px`, 
+                      height: `${Math.max(100 - chaseCount * 15, 30)}px` 
+                    }} 
+                  />
+                  {chaseCount === 0 && (
+                    <span className="absolute text-background font-bold text-xs uppercase whitespace-nowrap">Click Me</span>
+                  )}
+                </div>
+              </button>
+            </div>
+          )}
+
           {/* ABOUT ME QUIZ */}
           {step === "about_me" && (
             <div className="space-y-8 animate-in slide-in-from-right duration-500">
@@ -469,7 +588,51 @@ export default function HeartsQuest() {
             <div className="text-center space-y-8 animate-in zoom-in duration-700">
               <Zap className="size-24 text-accent mx-auto animate-pulse" />
               <h2 className="text-4xl font-headline italic">You know me better than anyone.</h2>
-              <Button onClick={() => finishNode(4, "about_me")} className="bg-accent text-background">Node Synchronized <ArrowRight className="ml-2" /></Button>
+              <Button onClick={() => finishNode(5, "about_me")} className="bg-accent text-background">Node Synchronized <ArrowRight className="ml-2" /></Button>
+            </div>
+          )}
+
+          {/* DINO DISTANCE RUNNER */}
+          {step === "dino_game" && (
+            <div 
+              onClick={handleJump}
+              onKeyDown={(e) => e.key === " " && handleJump()}
+              tabIndex={0}
+              className="relative w-full h-[40vh] bg-secondary/5 rounded-3xl border border-primary/20 overflow-hidden cursor-pointer select-none outline-none animate-in zoom-in duration-500"
+            >
+              <div className="absolute top-4 right-6 text-right">
+                <p className="text-xs uppercase tracking-widest text-primary/60">Distance</p>
+                <p className="text-3xl font-mono text-white">{dinoScore}m / 6767m</p>
+              </div>
+
+              {/* DINO */}
+              <div 
+                className="absolute bottom-10 left-10 transition-transform duration-300 ease-out"
+                style={{ transform: `translateY(-${dinoY}px)` }}
+              >
+                <div className="relative">
+                  <Gamepad2 className="size-12 text-accent" />
+                  <div className="absolute -bottom-2 w-full h-1 bg-accent/20 blur-sm rounded-full" />
+                </div>
+              </div>
+
+              {/* OBSTACLES */}
+              {obstacles.map(o => (
+                <div 
+                  key={o.id}
+                  className="absolute bottom-10 whitespace-nowrap bg-destructive/10 border border-destructive/40 px-3 py-1 rounded-full text-xs font-bold text-destructive"
+                  style={{ left: `${o.left}%` }}
+                >
+                  {o.text}
+                </div>
+              ))}
+
+              <div className="absolute bottom-10 w-full h-px bg-primary/20" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {dinoScore < 100 && (
+                  <p className="text-xs uppercase tracking-widest text-primary animate-pulse">Click to Jump</p>
+                )}
+              </div>
             </div>
           )}
 
@@ -510,7 +673,7 @@ export default function HeartsQuest() {
                 <p className="text-5xl font-headline text-white">You have created: Me.</p>
                 <p className="text-primary/60 italic text-xl">Unfortunately this version is permanent.</p>
               </div>
-              <Button onClick={() => finishNode(5, "customize")} className="bg-accent text-background">Accept Fate</Button>
+              <Button onClick={() => finishNode(7, "customize")} className="bg-accent text-background">Accept Fate</Button>
             </div>
           )}
 
@@ -545,7 +708,7 @@ export default function HeartsQuest() {
                   <Heart className="size-48 text-primary fill-primary/30 heart-pulse" />
                   <Stars className="size-12 absolute top-0 right-0 text-accent animate-spin" />
                </div>
-               <Button onClick={() => finishNode(6, "flag_game")} className="bg-accent text-background px-12 h-16 text-lg font-bold rounded-full">
+               <Button onClick={() => finishNode(8, "flag_game")} className="bg-accent text-background px-12 h-16 text-lg font-bold rounded-full">
                   Node Synchronized <ArrowRight className="ml-2" />
                </Button>
             </div>
@@ -631,7 +794,7 @@ export default function HeartsQuest() {
                 </Button>
                 
                 {wheelResult && !wheelSpinning && (
-                   <Button variant="ghost" onClick={() => finishNode(7, "wheel")} className="text-primary/60 hover:text-primary">
+                   <Button variant="ghost" onClick={() => finishNode(9, "wheel")} className="text-primary/60 hover:text-primary">
                      Confirm Reward & Continue
                    </Button>
                 )}
@@ -654,7 +817,7 @@ export default function HeartsQuest() {
                     <Slider defaultValue={[50]} max={100} step={1} />
                   </div>
                 ))}
-                <Button onClick={() => finishNode(8, "rate_story")} className="w-full h-14 bg-accent text-background text-lg font-bold">
+                <Button onClick={() => finishNode(10, "rate_story")} className="w-full h-14 bg-accent text-background text-lg font-bold">
                   Finalize Tropes
                 </Button>
               </div>
@@ -685,11 +848,13 @@ export default function HeartsQuest() {
                 </div>
 
                 {[
-                  { q: "Do you steal blankets?", opts: ["Yes (Blanket Hog)", "Sometimes"] },
+                  { q: "Do you steal blankets when sleeping in the same bed?", opts: ["Yes (Blanket Hog)", "Sometimes"] },
                   { q: "Would you survive a zombie apocalypse?", opts: ["Yes", "No, I'd be the first to go"] },
-                  { q: "Love me if I was a worm?", opts: ["Obviously yes", "I'd keep you in a jar"] },
-                  { q: "Who survives longer on an island?", opts: ["Me", "You"] },
-                  { q: "Rom-com status:", opts: ["Main Couple", "Chaotic Side Couple", "Arguing in the Rain"] },
+                  { q: "Would you still love me if I was a worm?", opts: ["Obviously yes", "I'd keep you in a jar"] },
+                  { q: "Would you rather burp butterflies or fart glitter?", opts: ["Burp butterflies", "Fart glitter"] },
+                  { q: "If we're stranded on an island who survives longer?", opts: ["Me", "You"] },
+                  { q: "If we were in a rom-com:", opts: ["We’d be the main couple.", "We’d be the chaotic side couple.", "We’d argue in the rain.", "We’d accidentally fall in love mid-argument."] },
+                  { q: "Who fell first?", opts: ["Me", "You", "Same time"] },
                 ].map((item, i) => (
                   <div key={i} className="space-y-4 bg-secondary/10 p-6 rounded-2xl border border-primary/10">
                     <p className="text-lg font-medium">{item.q}</p>
@@ -746,7 +911,7 @@ export default function HeartsQuest() {
                  <p className="text-primary/60 uppercase tracking-widest text-xs">Quest Complete // Memory Archived</p>
               </div>
               
-              <Button onClick={() => { setStep("start"); setUnlockedIndex(0); setCompletedNodes([]); setRotation(0); setWheelResult(null); setQuizStep(0); setFreeQuizStep(0); }} variant="ghost" className="text-primary/40 hover:text-primary uppercase tracking-widest text-[10px]">
+              <Button onClick={() => { setStep("start"); setUnlockedIndex(0); setCompletedNodes([]); setRotation(0); setWheelResult(null); setQuizStep(0); setFreeQuizStep(0); setChaseCount(0); setDinoScore(0); }} variant="ghost" className="text-primary/40 hover:text-primary uppercase tracking-widest text-[10px]">
                 Reset Simulation
               </Button>
             </div>
