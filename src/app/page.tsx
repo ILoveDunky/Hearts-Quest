@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -27,7 +26,8 @@ import {
   UserCheck,
   Zap,
   MousePointer2,
-  Activity
+  Activity,
+  Skull
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ type GameStep =
   | "q1" | "s1" 
   | "q2" | "s2" 
   | "q3" | "s3" 
-  | "chase_heart"
+  | "chase_heart" | "chase_success"
   | "about_me" | "about_me_free" | "about_me_success"
   | "dino_game"
   | "customize" | "customize_result" 
@@ -55,9 +55,6 @@ interface Node {
 }
 
 // Precise Circular Layout (11 Nodes)
-// Center: (50, 50), Radius: 35
-// Calculated using polar coordinates: x = 50 + 35 * cos(theta), y = 50 + 35 * sin(theta)
-// Starting from -90 degrees (top)
 const NODES: Node[] = [
   { id: "q1", label: "Matched Profile", icon: Heart, x: 50, y: 15 },
   { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 68.9, y: 20.6 },
@@ -96,6 +93,7 @@ export default function HeartsQuest() {
   const [dinoScore, setDinoScore] = useState(0);
   const [dinoY, setDinoY] = useState(0);
   const [isJumping, setIsJumping] = useState(false);
+  const [isHurt, setIsHurt] = useState(false);
   const [obstacles, setObstacles] = useState<{ id: number; left: number; text: string }[]>([]);
   const dinoGameActive = step === "dino_game";
 
@@ -143,7 +141,7 @@ export default function HeartsQuest() {
       const newLeft = Math.random() * 70 + 15;
       setHeartPos({ top: `${newTop}%`, left: `${newLeft}%` });
     } else {
-      finishNode(4, "chase_heart");
+      setStep("chase_success");
       setChaseCount(0);
     }
   };
@@ -159,16 +157,28 @@ export default function HeartsQuest() {
       const now = Date.now();
       const delta = now - lastTime;
       lastTime = now;
+
       setDinoScore(prev => {
         if (prev >= 6767) return 6767;
-        return prev + 18; 
+        return prev + 5; // Slower point progression
       });
+
       setObstacles(prev => {
-        const moved = prev.map(o => ({ ...o, left: o.left - 0.15 * delta }));
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.06 * delta })); // Slower obstacle movement
+        
+        // Collision Detection
+        moved.forEach(o => {
+          if (o.left > 8 && o.left < 15 && dinoY < 30) {
+            setIsHurt(true);
+            setTimeout(() => setIsHurt(false), 300);
+          }
+        });
+
         return moved.filter(o => o.left > -20);
       });
+
       obstacleTimer += delta;
-      if (obstacleTimer > 2500) {
+      if (obstacleTimer > 3500) { // Slower obstacle spawning for readability
         setObstacles(prev => [
           ...prev,
           { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
@@ -179,7 +189,7 @@ export default function HeartsQuest() {
     };
     frameId = requestAnimationFrame(gameLoop);
     return () => cancelAnimationFrame(frameId);
-  }, [dinoGameActive]);
+  }, [dinoGameActive, dinoY]);
 
   useEffect(() => {
     if (dinoScore >= 6767 && step === "dino_game") {
@@ -190,7 +200,7 @@ export default function HeartsQuest() {
   const handleJump = () => {
     if (isJumping) return;
     setIsJumping(true);
-    setDinoY(100);
+    setDinoY(120);
     setTimeout(() => {
       setDinoY(0);
       setIsJumping(false);
@@ -275,7 +285,10 @@ export default function HeartsQuest() {
   }, []);
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-1000 overflow-hidden">
+    <main className={cn(
+      "relative min-h-screen flex items-center justify-center p-6 transition-all duration-300 overflow-hidden",
+      isHurt ? "bg-destructive/20" : "bg-background"
+    )}>
       <StarField intensity={step === "map" || step === "final" || step === "calculating" ? "high" : "normal"} />
 
       <div className="z-10 w-full max-w-4xl py-12 h-full flex flex-col justify-center">
@@ -317,10 +330,7 @@ export default function HeartsQuest() {
           <div className="relative w-full max-w-[500px] aspect-square mx-auto animate-in fade-in zoom-in duration-1000">
             {/* SVG Lines */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
-              {/* Perfect Faint Background Circle */}
               <circle cx="50" cy="50" r="35" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.2" className="opacity-10" />
-              
-              {/* Polished Connection Line */}
               <path 
                 d={pathD}
                 fill="none"
@@ -330,8 +340,6 @@ export default function HeartsQuest() {
                 strokeLinecap="round"
                 className="opacity-20 constellation-line"
               />
-              
-              {/* Pulsing Active Segment */}
               {unlockedIndex > 0 && unlockedIndex < NODES.length && (
                 <path 
                   d={`M ${NODES[unlockedIndex-1].x} ${NODES[unlockedIndex-1].y} L ${NODES[unlockedIndex].x} ${NODES[unlockedIndex].y}`}
@@ -342,13 +350,6 @@ export default function HeartsQuest() {
                 />
               )}
             </svg>
-
-            {/* Central Icon */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-center space-y-2 opacity-20">
-                <MapIcon className="size-8 mx-auto text-primary" />
-              </div>
-            </div>
 
             {/* Nodes */}
             {NODES.map((node, index) => {
@@ -387,17 +388,6 @@ export default function HeartsQuest() {
                 </button>
               );
             })}
-
-            {unlockedIndex === NODES.length && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Button 
-                  onClick={() => setStep("final")}
-                  className="px-12 py-8 bg-accent text-background rounded-full font-bold animate-pulse shadow-[0_0_50px_rgba(230,230,250,0.6)] text-lg uppercase tracking-widest"
-                >
-                  Final Destiny
-                </Button>
-              </div>
-            )}
           </div>
         )}
 
@@ -453,13 +443,28 @@ export default function HeartsQuest() {
           )}
           {step === "chase_heart" && (
             <div className="relative w-full h-[60vh] bg-secondary/10 rounded-3xl border border-primary/20 overflow-hidden animate-in fade-in duration-500">
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center z-20">
                 <p className="text-xs uppercase tracking-widest text-primary/60">Catch the heart</p>
                 <p className="text-2xl font-headline text-white">{6 - chaseCount} more times</p>
               </div>
-              <button onClick={handleChaseClick} className="absolute transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2" style={{ top: heartPos.top, left: heartPos.left }}>
+              <button 
+                onClick={handleChaseClick} 
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all"
+                style={{ 
+                  top: heartPos.top, 
+                  left: heartPos.left,
+                  transitionDuration: `${Math.max(400 - (chaseCount * 60), 100)}ms` 
+                }}
+              >
                 <Heart className="text-primary fill-primary/40 drop-shadow-[0_0_15px_rgba(216,180,254,0.5)]" style={{ width: `${Math.max(100 - chaseCount * 12, 30)}px`, height: `${Math.max(100 - chaseCount * 12, 30)}px` }} />
               </button>
+            </div>
+          )}
+          {step === "chase_success" && (
+            <div className="text-center space-y-8 animate-in zoom-in duration-700">
+              <Heart className="size-24 text-primary fill-primary mx-auto heart-pulse" />
+              <h2 className="text-3xl font-headline italic">"You really never stop chasing my heart, do you?"</h2>
+              <Button onClick={() => finishNode(4, "chase_heart")} className="bg-accent text-background">Node Synchronized <ArrowRight className="ml-2" /></Button>
             </div>
           )}
           {step === "about_me" && (
@@ -525,10 +530,15 @@ export default function HeartsQuest() {
           )}
           {step === "dino_game" && (
             <div onClick={handleJump} onKeyDown={(e) => e.key === " " && handleJump()} tabIndex={0} className="relative w-full h-[40vh] bg-secondary/5 rounded-3xl border border-primary/20 overflow-hidden cursor-pointer select-none outline-none">
-              <div className="absolute top-4 right-6 text-right"><p className="text-xs uppercase tracking-widest text-primary/60">Distance</p><p className="text-3xl font-mono text-white">{dinoScore}m / 6767m</p></div>
-              <div className="absolute bottom-10 left-10 transition-transform duration-300 ease-out" style={{ transform: `translateY(-${dinoY}px)` }}><Gamepad2 className="size-12 text-accent" /></div>
+              <div className="absolute top-4 right-6 text-right z-20"><p className="text-xs uppercase tracking-widest text-primary/60">Distance</p><p className="text-3xl font-mono text-white">{dinoScore}m / 6767m</p></div>
+              <div className={cn(
+                "absolute bottom-10 left-10 transition-all duration-300 ease-out z-20",
+                isHurt && "text-destructive animate-pulse"
+              )} style={{ transform: `translateY(-${dinoY}px)` }}>
+                {isHurt ? <Skull className="size-12" /> : <Activity className="size-12 text-accent" />}
+              </div>
               {obstacles.map(o => (
-                <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/10 border border-destructive/40 px-3 py-1 rounded-full text-xs font-bold text-destructive" style={{ left: `${o.left}%` }}>{o.text}</div>
+                <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/10 border border-destructive/40 px-4 py-2 rounded-full text-sm font-bold text-destructive" style={{ left: `${o.left}%` }}>{o.text}</div>
               ))}
               <div className="absolute bottom-10 w-full h-px bg-primary/20" />
             </div>
