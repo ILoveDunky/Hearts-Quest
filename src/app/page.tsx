@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { StarField } from "@/components/StarField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,8 @@ import {
   MousePointer2,
   Activity,
   Skull,
-  Dna
+  Dna,
+  TouchpadOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,8 @@ type GameStep =
   | "about_me" | "about_me_free" | "about_me_success"
   | "dino_game"
   | "customize" | "customize_result" 
+  | "prove_love" | "prove_success"
+  | "who_loves_more" | "who_loves_result"
   | "flag_game" | "flag_success"
   | "wheel" 
   | "rate_story" | "compatibility" | "calculating" 
@@ -52,20 +55,36 @@ interface Node {
   y: number; // percentage
 }
 
-// Perfect Circular Layout (11 Nodes)
-const NODES: Node[] = [
-  { id: "q1", label: "Matched Profile", icon: Heart, x: 50, y: 15 },
-  { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 68.9, y: 20.6 },
-  { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 81.8, y: 35.5 },
-  { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 84.6, y: 54.9 },
-  { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 76.5, y: 72.9 },
-  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 59.9, y: 83.6 },
-  { id: "customize", label: "Bond Lab", icon: Dna, x: 40.1, y: 83.6 },
-  { id: "flag_game", label: "Flag Check", icon: Flag, x: 23.6, y: 72.9 },
-  { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15.4, y: 54.9 },
-  { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 18.1, y: 35.5 },
-  { id: "compatibility", label: "Destiny Test", icon: Calculator, x: 31.0, y: 20.6 },
-];
+// Polar coordinate helper for 13 nodes
+const generateNodes = (): Node[] => {
+  const nodeData: { id: GameStep; label: string; icon: any }[] = [
+    { id: "q1", label: "Matched Profile", icon: Heart },
+    { id: "q2", label: "Gamer Duo", icon: Gamepad2 },
+    { id: "q3", label: "First Words", icon: MessageSquareHeart },
+    { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2 },
+    { id: "about_me", label: "The Legend Quiz", icon: UserCheck },
+    { id: "dino_game", label: "Distance Runner", icon: Activity },
+    { id: "customize", label: "Bond Lab", icon: Dna },
+    { id: "prove_love", label: "Love Proof", icon: Zap },
+    { id: "who_loves_more", label: "Love Battle", icon: Heart },
+    { id: "flag_game", label: "Flag Check", icon: Flag },
+    { id: "wheel", label: "Affection Wheel", icon: RotateCw },
+    { id: "rate_story", label: "Love Tropes", icon: BookHeart },
+    { id: "compatibility", label: "Destiny Test", icon: Calculator },
+  ];
+
+  return nodeData.map((data, i) => {
+    const angle = (i * (360 / nodeData.length) - 90) * (Math.PI / 180);
+    const radius = 38; 
+    return {
+      ...data,
+      x: 50 + radius * Math.cos(angle),
+      y: 50 + radius * Math.sin(angle),
+    };
+  });
+};
+
+const NODES = generateNodes();
 
 export default function HeartsQuest() {
   const [step, setStep] = useState<GameStep>("start");
@@ -86,6 +105,14 @@ export default function HeartsQuest() {
   // Chasing Heart State
   const [chaseCount, setChaseCount] = useState(0);
   const [heartPos, setHeartPos] = useState({ top: "50%", left: "50%" });
+
+  // Prove Love State
+  const [proveCount, setProveCount] = useState(0);
+  const [proveBtnPos, setProveBtnPos] = useState({ top: "50%", left: "50%" });
+
+  // Who Loves More State
+  const [p1Love, setP1Love] = useState(0);
+  const [p2Love, setP2Love] = useState(0);
 
   // Relationship Simulator State
   const [relStats, setRelStats] = useState({
@@ -155,6 +182,41 @@ export default function HeartsQuest() {
     }
   };
 
+  const handleProveClick = () => {
+    const nextCount = proveCount + 1;
+    setProveCount(nextCount);
+    if (nextCount >= 100) {
+      setStep("prove_success");
+    } else if (nextCount % 10 === 0) {
+      setProveBtnPos({
+        top: `${Math.random() * 60 + 20}%`,
+        left: `${Math.random() * 60 + 20}%`
+      });
+    }
+  };
+
+  const handleLoveSpam = () => {
+    if (p1Love < 100 && p2Love < 100) {
+      setP1Love(prev => Math.min(100, prev + 5));
+    }
+  };
+
+  useEffect(() => {
+    if (step === "who_loves_more") {
+      const interval = setInterval(() => {
+        setP2Love(prev => {
+          const next = Math.min(100, prev + (Math.random() * 4));
+          if (next >= 100 && p1Love >= 100) {
+            setStep("who_loves_result");
+            clearInterval(interval);
+          }
+          return next;
+        });
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [step, p1Love]);
+
   const updateRel = (changes: Partial<typeof relStats>) => {
     setRelStats(prev => {
       const next = { ...prev };
@@ -181,11 +243,11 @@ export default function HeartsQuest() {
 
       setDinoScore(prev => {
         if (prev >= 6767) return 6767;
-        return prev + 4;
+        return prev + 2; // Slower score
       });
 
       setObstacles(prev => {
-        const moved = prev.map(o => ({ ...o, left: o.left - 0.02 * delta }));
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.015 * delta })); // Slower obstacles
         
         moved.forEach(o => {
           if (o.left > 8 && o.left < 14 && dinoY < 25) {
@@ -198,7 +260,7 @@ export default function HeartsQuest() {
       });
 
       obstacleTimer += delta;
-      if (obstacleTimer > 4000) {
+      if (obstacleTimer > 4500) { // More time between obstacles
         setObstacles(prev => [
           ...prev,
           { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
@@ -345,7 +407,7 @@ export default function HeartsQuest() {
         {step === "map" && (
           <div className="relative w-full max-w-[500px] aspect-square mx-auto animate-in fade-in zoom-in duration-1000">
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="35" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.2" className="opacity-10" />
+              <circle cx="50" cy="50" r="38" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.2" className="opacity-10" />
               <path 
                 d={pathD}
                 fill="none"
@@ -462,7 +524,7 @@ export default function HeartsQuest() {
               </div>
               <button 
                 onClick={handleChaseClick} 
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all cursor-pointer p-4"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all cursor-pointer p-4 animate-bounce"
                 style={{ 
                   top: heartPos.top, 
                   left: heartPos.left,
@@ -548,7 +610,7 @@ export default function HeartsQuest() {
                 "absolute bottom-10 left-10 transition-all duration-300 ease-out z-20",
                 isHurt && "text-destructive animate-pulse"
               )} style={{ transform: `translateY(-${dinoY}px)` }}>
-                {isHurt ? <Skull className="size-10" /> : <Zap className="size-10 text-accent" />}
+                {isHurt ? <Skull className="size-10" /> : <Activity className="size-10 text-accent" />}
               </div>
               {obstacles.map(o => (
                 <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/20 border border-destructive/40 px-2 py-1 rounded-md text-[8px] font-bold text-destructive uppercase tracking-tighter" style={{ left: `${o.left}%` }}>
@@ -579,12 +641,13 @@ export default function HeartsQuest() {
 
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: "Send Meme", action: () => updateRel({ fun: 10, communication: 5, chaos: 2 }) },
-                  { label: "Start Deep Talk", action: () => updateRel({ trust: 15, communication: 15, sleep: -10 }) },
-                  { label: "Tease", action: () => updateRel({ fun: 10, chaos: 15, trust: -2 }) },
-                  { label: "Apologize", action: () => updateRel({ trust: 10, chaos: -15 }) },
-                  { label: "Plan Date", action: () => updateRel({ fun: 15, trust: 10, sleep: -5 }) },
-                  { label: "Overthink", action: () => updateRel({ chaos: 20, trust: -10, sleep: -15 }) },
+                  { label: "Send Meme", action: () => updateRel({ fun: 15, communication: 5, chaos: 2 }) },
+                  { label: "Start Deep Talk", action: () => updateRel({ trust: 15, communication: 20, sleep: -15 }) },
+                  { label: "Tease", action: () => updateRel({ fun: 10, chaos: 20, trust: -5 }) },
+                  { label: "Apologize", action: () => updateRel({ trust: 20, chaos: -20, communication: 10 }) },
+                  { label: "Plan Date", action: () => updateRel({ fun: 20, trust: 10, sleep: -10 }) },
+                  { label: "Overthink", action: () => updateRel({ chaos: 30, trust: -15, sleep: -20 }) },
+                  { label: "Sleep on call", action: () => updateRel({ trust: 15, fun: 5, sleep: 30, communication: -5 }) },
                 ].map((btn) => (
                   <Button 
                     key={btn.label} 
@@ -614,6 +677,72 @@ export default function HeartsQuest() {
               <Button onClick={() => finishNode(7, "customize")} className="bg-accent text-background">Accept Fate</Button>
             </div>
           )}
+          {step === "prove_love" && (
+            <div className="relative w-full h-[60vh] flex flex-col items-center justify-center animate-in fade-in duration-500">
+              <div className="text-center mb-8 space-y-2">
+                <h2 className="text-3xl font-headline text-primary">PROVE YOU LOVE ME</h2>
+                <p className="text-6xl font-headline text-white">{proveCount}</p>
+                {proveCount >= 90 && <p className="text-xs text-primary/40 animate-pulse">ALMOST THERE...</p>}
+              </div>
+              <Button
+                onClick={handleProveClick}
+                className="absolute transition-all duration-200 h-24 w-48 bg-accent text-background text-lg font-bold rounded-2xl shadow-xl hover:scale-105"
+                style={{ top: proveBtnPos.top, left: proveBtnPos.left, transform: 'translate(-50%, -50%)' }}
+              >
+                PRESS IF YOU LOVE ME
+              </Button>
+            </div>
+          )}
+          {step === "prove_success" && (
+            <div className="text-center space-y-8 animate-in zoom-in duration-700">
+              <Heart className="size-24 text-primary fill-primary mx-auto animate-ping" />
+              <h2 className="text-4xl font-headline italic">"Okay okay I get it."</h2>
+              <Button onClick={() => finishNode(8, "prove_love")} className="bg-accent text-background">Node Synchronized</Button>
+            </div>
+          )}
+          {step === "who_loves_more" && (
+            <div className="space-y-12 animate-in slide-in-from-bottom duration-500">
+              <h2 className="text-3xl font-headline text-center text-primary">Who loves the other more?</h2>
+              
+              <div className="space-y-8 bg-secondary/10 p-12 rounded-[3rem] border border-primary/20">
+                <div className="space-y-4">
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-primary/60">
+                    <span>Her Love</span>
+                    <span>{Math.round(p1Love)}%</span>
+                  </div>
+                  <Progress value={p1Love} className="h-4" />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-accent/60">
+                    <span>My Love</span>
+                    <span>{Math.round(p2Love)}%</span>
+                  </div>
+                  <Progress value={p2Love} className="h-4 bg-accent/10" />
+                </div>
+              </div>
+
+              <div className="text-center">
+                <Button 
+                  onClick={handleLoveSpam}
+                  className="size-48 rounded-full bg-primary text-background font-bold text-xl shadow-[0_0_50px_rgba(216,180,254,0.4)] hover:scale-110 active:scale-95 transition-all"
+                >
+                  SPAM LOVE
+                </Button>
+                <p className="mt-4 text-xs text-primary/40 animate-pulse">DON'T LET HIM WIN</p>
+              </div>
+            </div>
+          )}
+          {step === "who_loves_result" && (
+            <div className="text-center space-y-8 animate-in zoom-in duration-700">
+              <div className="flex justify-center gap-4">
+                <Heart className="size-16 text-primary fill-primary" />
+                <Heart className="size-16 text-accent fill-accent" />
+              </div>
+              <h2 className="text-4xl font-headline italic">"We love each other equally."</h2>
+              <Button onClick={() => { setP1Love(0); setP2Love(0); finishNode(9, "who_loves_more"); }} className="bg-accent text-background">Node Synchronized</Button>
+            </div>
+          )}
           {step === "flag_game" && (
             <div className="space-y-8 animate-in fade-in duration-500">
               <h2 className="text-3xl font-headline text-center text-primary">Flag Check</h2>
@@ -629,7 +758,7 @@ export default function HeartsQuest() {
           {step === "flag_success" && (
             <div className="text-center space-y-12 animate-in zoom-in duration-700">
                <Heart className="size-48 text-primary fill-primary/30 mx-auto heart-pulse" />
-               <Button onClick={() => finishNode(8, "flag_game")} className="bg-accent text-background">Node Synchronized</Button>
+               <Button onClick={() => finishNode(10, "flag_game")} className="bg-accent text-background">Node Synchronized</Button>
             </div>
           )}
           {step === "wheel" && (
@@ -651,7 +780,7 @@ export default function HeartsQuest() {
                 </div>
               </div>
               <Button disabled={wheelSpinning} onClick={spinWheel} className="w-full h-14 bg-accent text-background font-bold">{wheelSpinning ? "Spinning..." : "Spin the Wheel"}</Button>
-              {wheelResult && !wheelSpinning && <Button variant="ghost" onClick={() => finishNode(9, "wheel")} className="text-primary/60">Continue</Button>}
+              {wheelResult && !wheelSpinning && <Button variant="ghost" onClick={() => finishNode(11, "wheel")} className="text-primary/60">Continue</Button>}
             </div>
           )}
           {step === "rate_story" && (
@@ -667,7 +796,7 @@ export default function HeartsQuest() {
                     </div>
                   </div>
                 ))}
-                <Button onClick={() => finishNode(10, "rate_story")} className="w-full h-14 bg-accent text-background font-bold">Finalize Tropes</Button>
+                <Button onClick={() => finishNode(12, "rate_story")} className="w-full h-14 bg-accent text-background font-bold">Finalize Tropes</Button>
               </div>
             </div>
           )}
