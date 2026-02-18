@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -50,7 +51,6 @@ interface Node {
   y: number; // percentage
 }
 
-// Polar coordinate helper for exactly 11 nodes
 const generateNodes = (): Node[] => {
   const nodeData: { id: GameStep; label: string; icon: any }[] = [
     { id: "q1", label: "Matched Profile", icon: Heart },
@@ -86,28 +86,22 @@ export default function HeartsQuest() {
   const [answer, setAnswer] = useState("");
   const [flagIndex, setFlagIndex] = useState(0);
   
-  // Quiz State
   const [quizStep, setQuizStep] = useState(0);
   const [freeQuizStep, setFreeQuizStep] = useState(0);
 
-  // Wheel State
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelResult, setWheelResult] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
 
-  // Chasing Heart State
   const [chaseCount, setChaseCount] = useState(0);
   const [heartPos, setHeartPos] = useState({ top: "50%", left: "50%" });
 
-  // Prove Love State
   const [proveCount, setProveCount] = useState(0);
   const [proveBtnPos, setProveBtnPos] = useState({ top: "50%", left: "50%" });
 
-  // Who Loves More State
   const [p1Love, setP1Love] = useState(0);
   const [p2Love, setP2Love] = useState(0);
 
-  // Relationship Simulator State
   const [relStats, setRelStats] = useState({
     trust: 50,
     fun: 50,
@@ -158,8 +152,8 @@ export default function HeartsQuest() {
     e.stopPropagation();
     if (chaseCount < 6) {
       setChaseCount(prev => prev + 1);
-      const newTop = Math.random() * 60 + 20;
-      const newLeft = Math.random() * 60 + 20;
+      const newTop = Math.random() * 70 + 15;
+      const newLeft = Math.random() * 70 + 15;
       setHeartPos({ top: `${newTop}%`, left: `${newLeft}%` });
     } else {
       setStep("chase_success");
