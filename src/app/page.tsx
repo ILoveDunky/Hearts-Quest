@@ -5,7 +5,6 @@ import { StarField } from "@/components/StarField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { 
@@ -13,21 +12,20 @@ import {
   Stars, 
   Gamepad2, 
   MessageSquareHeart, 
-  UserPlus, 
   Flag, 
   RotateCw, 
   BookHeart, 
   Calculator,
   CheckCircle2,
   XCircle,
-  Map as MapIcon,
   Lock,
   ArrowRight,
   UserCheck,
   Zap,
   MousePointer2,
   Activity,
-  Skull
+  Skull,
+  Dna
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -61,8 +59,8 @@ const NODES: Node[] = [
   { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 81.8, y: 35.5 },
   { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 84.6, y: 54.9 },
   { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 76.5, y: 72.9 },
-  { id: "dino_game", label: "Distance Runner", icon: Zap, x: 59.9, y: 83.6 },
-  { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 40.1, y: 83.6 },
+  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 59.9, y: 83.6 },
+  { id: "customize", label: "Bond Lab", icon: Dna, x: 40.1, y: 83.6 },
   { id: "flag_game", label: "Flag Check", icon: Flag, x: 23.6, y: 72.9 },
   { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15.4, y: 54.9 },
   { id: "rate_story", label: "Love Tropes", icon: BookHeart, x: 18.1, y: 35.5 },
@@ -88,6 +86,16 @@ export default function HeartsQuest() {
   // Chasing Heart State
   const [chaseCount, setChaseCount] = useState(0);
   const [heartPos, setHeartPos] = useState({ top: "50%", left: "50%" });
+
+  // Relationship Simulator State
+  const [relStats, setRelStats] = useState({
+    trust: 50,
+    fun: 50,
+    communication: 50,
+    chaos: 10,
+    sleep: 90
+  });
+  const [relActions, setRelActions] = useState(0);
 
   // Dino Game State
   const [dinoScore, setDinoScore] = useState(0);
@@ -147,6 +155,17 @@ export default function HeartsQuest() {
     }
   };
 
+  const updateRel = (changes: Partial<typeof relStats>) => {
+    setRelStats(prev => {
+      const next = { ...prev };
+      (Object.keys(changes) as (keyof typeof relStats)[]).forEach(key => {
+        next[key] = Math.min(100, Math.max(0, next[key] + (changes[key] || 0)));
+      });
+      return next;
+    });
+    setRelActions(c => c + 1);
+  };
+
   // Dino Physics & Loop
   useEffect(() => {
     if (!dinoGameActive) return;
@@ -162,16 +181,14 @@ export default function HeartsQuest() {
 
       setDinoScore(prev => {
         if (prev >= 6767) return 6767;
-        return prev + 4; // Balanced score speed
+        return prev + 4;
       });
 
       setObstacles(prev => {
-        const moved = prev.map(o => ({ ...o, left: o.left - 0.025 * delta })); // Slower, readable obstacles
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.02 * delta }));
         
-        // Accurate Collision Detection
         moved.forEach(o => {
-          // X: 10-15%, Y: Ground level check
-          if (o.left > 8 && o.left < 14 && dinoY < 35) {
+          if (o.left > 8 && o.left < 14 && dinoY < 25) {
             setIsHurt(true);
             setTimeout(() => setIsHurt(false), 300);
           }
@@ -181,7 +198,7 @@ export default function HeartsQuest() {
       });
 
       obstacleTimer += delta;
-      if (obstacleTimer > 4500) { // More space between obstacles
+      if (obstacleTimer > 4000) {
         setObstacles(prev => [
           ...prev,
           { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
@@ -203,11 +220,11 @@ export default function HeartsQuest() {
   const handleJump = () => {
     if (isJumping) return;
     setIsJumping(true);
-    setDinoY(130);
+    setDinoY(110);
     setTimeout(() => {
       setDinoY(0);
       setIsJumping(false);
-    }, 900); // Slightly more hang-time for easier jumping
+    }, 800);
   };
 
   const handleAboutMeMC = (correct: boolean) => {
@@ -279,7 +296,6 @@ export default function HeartsQuest() {
     }
   }, [step]);
 
-  // Generate Path String (Polygon connection)
   const pathD = useMemo(() => {
     return NODES.reduce((acc, node, i) => {
       if (i === 0) return `M ${node.x} ${node.y}`;
@@ -296,7 +312,6 @@ export default function HeartsQuest() {
 
       <div className="z-10 w-full max-w-4xl py-12 h-full flex flex-col justify-center">
         
-        {/* PROGRESS HEADER */}
         {step !== "start" && step !== "final" && step !== "calculating" && (
           <div className="fixed top-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 space-y-2 z-[60]">
             <div className="flex justify-between items-center text-primary/60 text-[10px] uppercase tracking-widest font-bold">
@@ -307,7 +322,6 @@ export default function HeartsQuest() {
           </div>
         )}
 
-        {/* START SCREEN */}
         {step === "start" && (
           <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700">
             <div className="flex justify-center mb-4">
@@ -328,10 +342,8 @@ export default function HeartsQuest() {
           </div>
         )}
 
-        {/* CONSTELLATION MAP */}
         {step === "map" && (
           <div className="relative w-full max-w-[500px] aspect-square mx-auto animate-in fade-in zoom-in duration-1000">
-            {/* SVG Lines - Background Layer */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="35" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.2" className="opacity-10" />
               <path 
@@ -354,7 +366,6 @@ export default function HeartsQuest() {
               )}
             </svg>
 
-            {/* Nodes - Foreground Layer */}
             {NODES.map((node, index) => {
               const isUnlocked = index <= unlockedIndex;
               const isCompleted = completedNodes.includes(node.id);
@@ -394,7 +405,6 @@ export default function HeartsQuest() {
           </div>
         )}
 
-        {/* CHALLENGE SCREENS */}
         <div className="max-w-lg mx-auto w-full">
           {step === "q1" && (
             <div className="space-y-6 animate-in slide-in-from-bottom duration-500">
@@ -541,7 +551,7 @@ export default function HeartsQuest() {
                 {isHurt ? <Skull className="size-10" /> : <Zap className="size-10 text-accent" />}
               </div>
               {obstacles.map(o => (
-                <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/20 border border-destructive/40 px-2 py-1 rounded-md text-[10px] font-bold text-destructive uppercase tracking-tighter" style={{ left: `${o.left}%` }}>
+                <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/20 border border-destructive/40 px-2 py-1 rounded-md text-[8px] font-bold text-destructive uppercase tracking-tighter" style={{ left: `${o.left}%` }}>
                   {o.text}
                 </div>
               ))}
@@ -549,23 +559,58 @@ export default function HeartsQuest() {
             </div>
           )}
           {step === "customize" && (
-            <div className="space-y-8 animate-in slide-in-from-right duration-500">
-              <h2 className="text-3xl font-headline text-center uppercase text-primary">Boyfriend Lab</h2>
-              <div className="space-y-8 bg-secondary/10 p-6 rounded-2xl border border-primary/10">
-                {[{ l: "Cuddly", r: "Annoying" }, { l: "Calm", r: "Overdramatic" }, { l: "Mature", r: "Sends reels at 3am" }, { l: "Romantic", r: "Feral" }].map((pair, i) => (
-                  <div key={i} className="space-y-4">
-                    <div className="flex justify-between text-xs font-bold opacity-60"><span>{pair.l}</span><span>{pair.r}</span></div>
-                    <Slider defaultValue={[50]} max={100} step={1} />
+            <div className="space-y-6 animate-in slide-in-from-bottom duration-500">
+              <div className="text-center">
+                <h2 className="text-3xl font-headline text-primary">Relationship Simulator 🧬</h2>
+                <p className="text-xs text-primary/40 uppercase tracking-widest mt-1">Fine-tuning the dynamic</p>
+              </div>
+              
+              <div className="grid gap-4 bg-secondary/10 p-6 rounded-3xl border border-primary/20">
+                {Object.entries(relStats).map(([key, value]) => (
+                  <div key={key} className="space-y-2">
+                    <div className="flex justify-between items-end">
+                      <Label className="capitalize text-[10px] font-bold tracking-wider opacity-60">{key}</Label>
+                      <span className="text-[10px] font-mono text-primary/60">{value}%</span>
+                    </div>
+                    <Progress value={value} className="h-1.5" />
                   </div>
                 ))}
-                <Button onClick={() => setStep("customize_result")} className="w-full h-14 bg-accent text-background font-bold">Initialize Creation</Button>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: "Send Meme", action: () => updateRel({ fun: 10, communication: 5, chaos: 2 }) },
+                  { label: "Start Deep Talk", action: () => updateRel({ trust: 15, communication: 15, sleep: -10 }) },
+                  { label: "Tease", action: () => updateRel({ fun: 10, chaos: 15, trust: -2 }) },
+                  { label: "Apologize", action: () => updateRel({ trust: 10, chaos: -15 }) },
+                  { label: "Plan Date", action: () => updateRel({ fun: 15, trust: 10, sleep: -5 }) },
+                  { label: "Overthink", action: () => updateRel({ chaos: 20, trust: -10, sleep: -15 }) },
+                ].map((btn) => (
+                  <Button 
+                    key={btn.label} 
+                    variant="outline" 
+                    onClick={btn.action}
+                    className="h-12 border-primary/20 hover:bg-primary/5 hover:border-primary/40 text-[10px] font-bold uppercase tracking-tight"
+                  >
+                    {btn.label}
+                  </Button>
+                ))}
+              </div>
+
+              {relActions >= 5 && (
+                <Button 
+                  onClick={() => setStep("customize_result")} 
+                  className="w-full h-14 bg-accent text-background font-bold text-lg animate-pulse"
+                >
+                  Synchronize Bond
+                </Button>
+              )}
             </div>
           )}
           {step === "customize_result" && (
             <div className="text-center space-y-8 animate-in zoom-in duration-700">
               <h2 className="text-4xl font-headline text-primary">Synchronization Complete.</h2>
-              <p className="text-2xl font-headline text-white">You have created: Me. Unfortunately this version is permanent.</p>
+              <p className="text-2xl font-headline text-white">Relationship dynamic stabilized. Current status: Legally Unseparable.</p>
               <Button onClick={() => finishNode(7, "customize")} className="bg-accent text-background">Accept Fate</Button>
             </div>
           )}
@@ -614,7 +659,13 @@ export default function HeartsQuest() {
               <h2 className="text-3xl font-headline text-center text-primary">Love Story Rating</h2>
               <div className="space-y-10 bg-secondary/10 p-8 rounded-3xl border border-primary/20">
                 {["Enemies to Lovers", "Friends to Lovers", "Slow Burn"].map((trope, i) => (
-                  <div key={i} className="space-y-4"><Label className="text-lg font-headline">{trope}</Label><Slider defaultValue={[50]} max={100} step={1} /></div>
+                  <div key={i} className="space-y-4">
+                    <Label className="text-lg font-headline">{trope}</Label>
+                    <div className="flex gap-4">
+                      <Button variant="outline" className="flex-1">Nah</Button>
+                      <Button variant="outline" className="flex-1">Peak</Button>
+                    </div>
+                  </div>
                 ))}
                 <Button onClick={() => finishNode(10, "rate_story")} className="w-full h-14 bg-accent text-background font-bold">Finalize Tropes</Button>
               </div>
