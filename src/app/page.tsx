@@ -54,14 +54,14 @@ interface Node {
   y: number; // percentage
 }
 
-// Precise Circular Layout (11 Nodes)
+// Perfect Circular Layout (11 Nodes)
 const NODES: Node[] = [
   { id: "q1", label: "Matched Profile", icon: Heart, x: 50, y: 15 },
   { id: "q2", label: "Gamer Duo", icon: Gamepad2, x: 68.9, y: 20.6 },
   { id: "q3", label: "First Words", icon: MessageSquareHeart, x: 81.8, y: 35.5 },
   { id: "chase_heart", label: "Fleeting Heart", icon: MousePointer2, x: 84.6, y: 54.9 },
   { id: "about_me", label: "The Legend Quiz", icon: UserCheck, x: 76.5, y: 72.9 },
-  { id: "dino_game", label: "Distance Runner", icon: Activity, x: 59.9, y: 83.6 },
+  { id: "dino_game", label: "Distance Runner", icon: Zap, x: 59.9, y: 83.6 },
   { id: "customize", label: "Boyfriend Lab", icon: UserPlus, x: 40.1, y: 83.6 },
   { id: "flag_game", label: "Flag Check", icon: Flag, x: 23.6, y: 72.9 },
   { id: "wheel", label: "Affection Wheel", icon: RotateCw, x: 15.4, y: 54.9 },
@@ -134,11 +134,12 @@ export default function HeartsQuest() {
     }
   };
 
-  const handleChaseClick = () => {
-    if (chaseCount < 5) {
+  const handleChaseClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (chaseCount < 6) {
       setChaseCount(prev => prev + 1);
-      const newTop = Math.random() * 70 + 15;
-      const newLeft = Math.random() * 70 + 15;
+      const newTop = Math.random() * 60 + 20;
+      const newLeft = Math.random() * 60 + 20;
       setHeartPos({ top: `${newTop}%`, left: `${newLeft}%` });
     } else {
       setStep("chase_success");
@@ -160,11 +161,11 @@ export default function HeartsQuest() {
 
       setDinoScore(prev => {
         if (prev >= 6767) return 6767;
-        return prev + 8; // Tuned for ~15-20 seconds to reach goal
+        return prev + 6; // Slower score for a longer journey
       });
 
       setObstacles(prev => {
-        const moved = prev.map(o => ({ ...o, left: o.left - 0.05 * delta }));
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.03 * delta })); // Slower obstacles
         
         // Collision Detection
         moved.forEach(o => {
@@ -178,7 +179,7 @@ export default function HeartsQuest() {
       });
 
       obstacleTimer += delta;
-      if (obstacleTimer > 3500) {
+      if (obstacleTimer > 4000) {
         setObstacles(prev => [
           ...prev,
           { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
@@ -204,7 +205,7 @@ export default function HeartsQuest() {
     setTimeout(() => {
       setDinoY(0);
       setIsJumping(false);
-    }, 700);
+    }, 800);
   };
 
   const handleAboutMeMC = (correct: boolean) => {
@@ -295,7 +296,7 @@ export default function HeartsQuest() {
         
         {/* PROGRESS HEADER */}
         {step !== "start" && step !== "final" && step !== "calculating" && (
-          <div className="fixed top-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 space-y-2 z-50">
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 space-y-2 z-[60]">
             <div className="flex justify-between items-center text-primary/60 text-[10px] uppercase tracking-widest font-bold">
               <span>Nebula Sync Status</span>
               <span>{Math.round(currentProgress)}%</span>
@@ -328,8 +329,8 @@ export default function HeartsQuest() {
         {/* CONSTELLATION MAP */}
         {step === "map" && (
           <div className="relative w-full max-w-[500px] aspect-square mx-auto animate-in fade-in zoom-in duration-1000">
-            {/* SVG Lines */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
+            {/* SVG Lines - Background Layer */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="35" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.2" className="opacity-10" />
               <path 
                 d={pathD}
@@ -351,7 +352,7 @@ export default function HeartsQuest() {
               )}
             </svg>
 
-            {/* Nodes */}
+            {/* Nodes - Foreground Layer */}
             {NODES.map((node, index) => {
               const isUnlocked = index <= unlockedIndex;
               const isCompleted = completedNodes.includes(node.id);
@@ -364,7 +365,7 @@ export default function HeartsQuest() {
                   onClick={() => setStep(node.id)}
                   style={{ left: `${node.x}%`, top: `${node.y}%` }}
                   className={cn(
-                    "absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 group",
+                    "absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 group z-10",
                     !isUnlocked && "opacity-20 grayscale cursor-not-allowed",
                     isUnlocked && "hover:scale-110"
                   )}
@@ -443,20 +444,20 @@ export default function HeartsQuest() {
           )}
           {step === "chase_heart" && (
             <div className="relative w-full h-[60vh] bg-secondary/10 rounded-3xl border border-primary/20 overflow-hidden animate-in fade-in duration-500">
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center z-20">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center z-20 pointer-events-none">
                 <p className="text-xs uppercase tracking-widest text-primary/60">Catch the heart</p>
-                <p className="text-2xl font-headline text-white">{6 - chaseCount} more times</p>
+                <p className="text-2xl font-headline text-white">{7 - chaseCount} more times</p>
               </div>
               <button 
                 onClick={handleChaseClick} 
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all cursor-pointer"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all cursor-pointer p-4"
                 style={{ 
                   top: heartPos.top, 
                   left: heartPos.left,
-                  transitionDuration: `${Math.max(400 - (chaseCount * 60), 100)}ms` 
+                  transitionDuration: `${Math.max(450 - (chaseCount * 70), 80)}ms` 
                 }}
               >
-                <Heart className="text-primary fill-primary/40 drop-shadow-[0_0_15px_rgba(216,180,254,0.5)]" style={{ width: `${Math.max(100 - chaseCount * 12, 30)}px`, height: `${Math.max(100 - chaseCount * 12, 30)}px` }} />
+                <Heart className="text-primary fill-primary/40 drop-shadow-[0_0_15px_rgba(216,180,254,0.5)]" style={{ width: `${Math.max(120 - chaseCount * 15, 40)}px`, height: `${Math.max(120 - chaseCount * 15, 40)}px` }} />
               </button>
             </div>
           )}
@@ -535,7 +536,7 @@ export default function HeartsQuest() {
                 "absolute bottom-10 left-10 transition-all duration-300 ease-out z-20",
                 isHurt && "text-destructive animate-pulse"
               )} style={{ transform: `translateY(-${dinoY}px)` }}>
-                {isHurt ? <Skull className="size-12" /> : <Activity className="size-12 text-accent" />}
+                {isHurt ? <Skull className="size-12" /> : <Zap className="size-12 text-accent" />}
               </div>
               {obstacles.map(o => (
                 <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/10 border border-destructive/40 px-4 py-2 rounded-full text-sm font-bold text-destructive" style={{ left: `${o.left}%` }}>{o.text}</div>
