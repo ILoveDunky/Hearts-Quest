@@ -147,6 +147,7 @@ export default function HeartsQuest() {
     }
   };
 
+  // Dino Physics & Loop
   useEffect(() => {
     if (!dinoGameActive) return;
     const obstacleTexts = ["Bad Wi-fi", "Work Schedule", "11 Hour Drive", "Bad Overwatch Teammates"];
@@ -161,15 +162,16 @@ export default function HeartsQuest() {
 
       setDinoScore(prev => {
         if (prev >= 6767) return 6767;
-        return prev + 6; // Slower score for a longer journey
+        return prev + 4; // Balanced score speed
       });
 
       setObstacles(prev => {
-        const moved = prev.map(o => ({ ...o, left: o.left - 0.03 * delta })); // Slower obstacles
+        const moved = prev.map(o => ({ ...o, left: o.left - 0.025 * delta })); // Slower, readable obstacles
         
-        // Collision Detection
+        // Accurate Collision Detection
         moved.forEach(o => {
-          if (o.left > 8 && o.left < 15 && dinoY < 40) {
+          // X: 10-15%, Y: Ground level check
+          if (o.left > 8 && o.left < 14 && dinoY < 35) {
             setIsHurt(true);
             setTimeout(() => setIsHurt(false), 300);
           }
@@ -179,7 +181,7 @@ export default function HeartsQuest() {
       });
 
       obstacleTimer += delta;
-      if (obstacleTimer > 4000) {
+      if (obstacleTimer > 4500) { // More space between obstacles
         setObstacles(prev => [
           ...prev,
           { id: Date.now(), left: 110, text: obstacleTexts[Math.floor(Math.random() * obstacleTexts.length)] }
@@ -205,7 +207,7 @@ export default function HeartsQuest() {
     setTimeout(() => {
       setDinoY(0);
       setIsJumping(false);
-    }, 800);
+    }, 900); // Slightly more hang-time for easier jumping
   };
 
   const handleAboutMeMC = (correct: boolean) => {
@@ -536,10 +538,12 @@ export default function HeartsQuest() {
                 "absolute bottom-10 left-10 transition-all duration-300 ease-out z-20",
                 isHurt && "text-destructive animate-pulse"
               )} style={{ transform: `translateY(-${dinoY}px)` }}>
-                {isHurt ? <Skull className="size-12" /> : <Zap className="size-12 text-accent" />}
+                {isHurt ? <Skull className="size-10" /> : <Zap className="size-10 text-accent" />}
               </div>
               {obstacles.map(o => (
-                <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/10 border border-destructive/40 px-4 py-2 rounded-full text-sm font-bold text-destructive" style={{ left: `${o.left}%` }}>{o.text}</div>
+                <div key={o.id} className="absolute bottom-10 whitespace-nowrap bg-destructive/20 border border-destructive/40 px-2 py-1 rounded-md text-[10px] font-bold text-destructive uppercase tracking-tighter" style={{ left: `${o.left}%` }}>
+                  {o.text}
+                </div>
               ))}
               <div className="absolute bottom-10 w-full h-px bg-primary/20" />
             </div>
@@ -588,7 +592,7 @@ export default function HeartsQuest() {
               <h2 className="text-3xl font-headline text-primary">Affection Wheel</h2>
               <div className="relative flex justify-center py-12">
                 <div className="relative size-80">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-30 w-6 h-10 bg-accent clip-path-triangle rotate-180" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 z-30 w-6 h-10 bg-accent rotate-180" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
                   <div className="w-full h-full rounded-full border-8 border-primary/20 overflow-hidden relative" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)' }}>
                     <svg viewBox="0 0 100 100" className="w-full h-full">
                       {wheelOptions.map((opt, i) => (
