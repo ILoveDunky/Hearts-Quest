@@ -10,20 +10,19 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { 
   Heart, 
-  Stars, 
   Gamepad2, 
   MessageSquareHeart, 
-  Flag, 
-  RotateCw, 
-  Calculator,
-  CheckCircle2,
-  XCircle,
   Lock,
   ArrowRight,
   UserCheck,
   Zap,
   MousePointer2,
-  Dna
+  Dna,
+  RotateCw,
+  Calculator,
+  CheckCircle2,
+  XCircle,
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,8 +46,8 @@ interface Node {
   id: GameStep;
   label: string;
   icon: React.ElementType;
-  x: number; // percentage
-  y: number; // percentage
+  x: number;
+  y: number;
 }
 
 const generateNodes = (): Node[] => {
@@ -61,14 +60,15 @@ const generateNodes = (): Node[] => {
     { id: "customize", label: "Bond Lab", icon: Dna },
     { id: "prove_love", label: "Love Proof", icon: Zap },
     { id: "who_loves_more", label: "Love Battle", icon: Heart },
-    { id: "flag_game", label: "Flag Check", icon: Flag },
+    { id: "flag_game", label: "Flag Check", icon: Activity },
     { id: "wheel", label: "Affection Wheel", icon: RotateCw },
     { id: "compatibility", label: "Destiny Test", icon: Calculator },
   ];
 
   return nodeData.map((data, i) => {
+    // Perfect Circle Mapping
     const angle = (i * (360 / nodeData.length) - 90) * (Math.PI / 180);
-    const radius = 38; 
+    const radius = 35; 
     return {
       ...data,
       x: 50 + radius * Math.cos(angle),
@@ -150,7 +150,7 @@ export default function HeartsQuest() {
 
   const handleChaseClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (chaseCount < 6) {
+    if (chaseCount < 7) {
       setChaseCount(prev => prev + 1);
       const newTop = Math.random() * 70 + 15;
       const newLeft = Math.random() * 70 + 15;
@@ -276,7 +276,7 @@ export default function HeartsQuest() {
     }
   }, [step]);
 
-  const pathD = useMemo(() => {
+  const circlePathD = useMemo(() => {
     return NODES.reduce((acc, node, i) => {
       if (i === 0) return `M ${node.x} ${node.y}`;
       return `${acc} L ${node.x} ${node.y}`;
@@ -284,7 +284,7 @@ export default function HeartsQuest() {
   }, []);
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-300 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-300 overflow-hidden">
       <StarField intensity={step === "map" || step === "final" || step === "calculating" ? "high" : "normal"} />
 
       <div className="z-10 w-full max-w-4xl py-12 h-full flex flex-col justify-center">
@@ -292,7 +292,7 @@ export default function HeartsQuest() {
         {step !== "start" && step !== "final" && step !== "calculating" && (
           <div className="fixed top-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 space-y-2 z-[60]">
             <div className="flex justify-between items-center text-primary/60 text-[10px] uppercase tracking-widest font-bold">
-              <span>Nebula Sync Status</span>
+              <span>Constellation Sync</span>
               <span>{Math.round(currentProgress)}%</span>
             </div>
             <Progress value={currentProgress} className="h-1 bg-secondary/30" />
@@ -304,11 +304,10 @@ export default function HeartsQuest() {
             <div className="flex justify-center mb-4">
               <div className="relative">
                 <Heart className="size-24 text-primary fill-primary/20 heart-pulse" />
-                <Stars className="size-8 absolute -top-2 -right-2 text-accent" />
               </div>
             </div>
             <h1 className="text-6xl font-headline tracking-tighter text-white">Hearts Quest</h1>
-            <p className="text-primary/60 italic text-xl">A journey through our star-crossed memories.</p>
+            <p className="text-primary/60 italic text-xl">Our memories, mapped in the stars.</p>
             <Button 
               size="lg" 
               onClick={() => setStep("map")}
@@ -322,9 +321,8 @@ export default function HeartsQuest() {
         {step === "map" && (
           <div className="relative w-full max-w-[500px] aspect-square mx-auto animate-in fade-in zoom-in duration-1000">
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="38" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.2" className="opacity-10" />
               <path 
-                d={pathD}
+                d={circlePathD}
                 fill="none"
                 stroke="hsl(var(--primary))"
                 strokeWidth="0.5"
@@ -332,15 +330,6 @@ export default function HeartsQuest() {
                 strokeLinecap="round"
                 className="opacity-20 constellation-line"
               />
-              {unlockedIndex > 0 && unlockedIndex < NODES.length && (
-                <path 
-                  d={`M ${NODES[unlockedIndex-1].x} ${NODES[unlockedIndex-1].y} L ${NODES[unlockedIndex].x} ${NODES[unlockedIndex].y}`}
-                  fill="none"
-                  stroke="hsl(var(--accent))"
-                  strokeWidth="0.8"
-                  className="animate-pulse opacity-60"
-                />
-              )}
             </svg>
 
             {NODES.map((node, index) => {
@@ -366,9 +355,6 @@ export default function HeartsQuest() {
                     isActive && "border-accent text-accent node-pulse scale-125 z-[30] shadow-[0_0_20px_rgba(216,180,254,0.5)]"
                   )}>
                     {isUnlocked ? <node.icon className="size-4" /> : <Lock className="size-3" />}
-                    {isActive && (
-                      <div className="absolute -inset-2 border border-accent/30 rounded-full animate-ping" />
-                    )}
                   </div>
                   <span className={cn(
                     "mt-3 text-[8px] uppercase font-bold tracking-[0.2em] whitespace-nowrap transition-all",
@@ -394,7 +380,7 @@ export default function HeartsQuest() {
           )}
           {step === "s1" && (
             <div className="text-center space-y-8 animate-in zoom-in duration-700">
-              <div className="flex justify-center"><div className="p-8 rounded-full bg-primary/10 border border-primary/20"><Heart className="size-20 text-primary fill-primary" /></div></div>
+              <Heart className="size-20 text-primary fill-primary mx-auto" />
               <h2 className="text-4xl font-headline italic">We didn't know it yet but that's when it all started.</h2>
               <Button onClick={() => finishNode(1, "q1")} className="bg-accent text-background">Node Synchronized <ArrowRight className="ml-2" /></Button>
             </div>
@@ -410,7 +396,7 @@ export default function HeartsQuest() {
           )}
           {step === "s2" && (
             <div className="text-center space-y-8 animate-in zoom-in duration-700">
-              <Gamepad2 className="size-24 text-primary mx-auto animate-bounce" />
+              <Gamepad2 className="size-24 text-primary mx-auto" />
               <h2 className="text-4xl font-headline italic">The start of an amazing gaming duo.</h2>
               <Button onClick={() => finishNode(2, "q2")} className="bg-accent text-background">Node Synchronized <ArrowRight className="ml-2" /></Button>
             </div>
@@ -435,7 +421,7 @@ export default function HeartsQuest() {
             <div className="relative w-full h-[60vh] bg-secondary/10 rounded-3xl border border-primary/20 overflow-hidden animate-in fade-in duration-500">
               <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center z-20 pointer-events-none">
                 <p className="text-xs uppercase tracking-widest text-primary/60">Catch the heart</p>
-                <p className="text-2xl font-headline text-white">{7 - chaseCount} more times</p>
+                <p className="text-2xl font-headline text-white">{8 - chaseCount} more times</p>
               </div>
               <button 
                 onClick={handleChaseClick} 
@@ -443,10 +429,10 @@ export default function HeartsQuest() {
                 style={{ 
                   top: heartPos.top, 
                   left: heartPos.left,
-                  transitionDuration: `${Math.max(450 - (chaseCount * 70), 80)}ms` 
+                  transitionDuration: `${Math.max(450 - (chaseCount * 60), 100)}ms` 
                 }}
               >
-                <Heart className="text-primary fill-primary/40 drop-shadow-[0_0_15px_rgba(216,180,254,0.5)]" style={{ width: `${Math.max(120 - chaseCount * 15, 40)}px`, height: `${Math.max(120 - chaseCount * 15, 40)}px` }} />
+                <Heart className="text-primary fill-primary/40 drop-shadow-[0_0_15px_rgba(216,180,254,0.5)] size-20" />
               </button>
             </div>
           )}
@@ -521,8 +507,7 @@ export default function HeartsQuest() {
           {step === "customize" && (
             <div className="space-y-6 animate-in slide-in-from-bottom duration-500">
               <div className="text-center">
-                <h2 className="text-3xl font-headline text-primary">Relationship Simulator 🧬</h2>
-                <p className="text-xs text-primary/40 uppercase tracking-widest mt-1">Fine-tuning the dynamic</p>
+                <h2 className="text-3xl font-headline text-primary">Bond Lab 🧬</h2>
               </div>
               
               <div className="grid gap-4 bg-secondary/10 p-6 rounded-3xl border border-primary/20">
@@ -544,14 +529,13 @@ export default function HeartsQuest() {
                   { label: "Tease", action: () => updateRel({ fun: 10, chaos: 20, trust: -5 }) },
                   { label: "Apologize", action: () => updateRel({ trust: 20, chaos: -20, communication: 10 }) },
                   { label: "Plan Date", action: () => updateRel({ fun: 20, trust: 10, sleep: -10 }) },
-                  { label: "Overthink", action: () => updateRel({ chaos: 30, trust: -15, sleep: -20 }) },
                   { label: "Sleep on call", action: () => updateRel({ trust: 15, fun: 5, sleep: 30, communication: -5 }) },
                 ].map((btn) => (
                   <Button 
                     key={btn.label} 
                     variant="outline" 
                     onClick={btn.action}
-                    className="h-12 border-primary/20 hover:bg-primary/5 hover:border-primary/40 text-[10px] font-bold uppercase tracking-tight"
+                    className="h-12 border-primary/20 hover:bg-primary/5 text-[10px] font-bold uppercase"
                   >
                     {btn.label}
                   </Button>
@@ -570,8 +554,7 @@ export default function HeartsQuest() {
           )}
           {step === "customize_result" && (
             <div className="text-center space-y-8 animate-in zoom-in duration-700">
-              <h2 className="text-4xl font-headline text-primary">Synchronization Complete.</h2>
-              <p className="text-2xl font-headline text-white">Relationship dynamic stabilized. Current status: Legally Unseparable.</p>
+              <h2 className="text-4xl font-headline text-primary">Status: Legally Unseparable.</h2>
               <Button onClick={() => finishNode(6, "customize")} className="bg-accent text-background">Accept Fate</Button>
             </div>
           )}
@@ -580,11 +563,10 @@ export default function HeartsQuest() {
               <div className="text-center mb-8 space-y-2">
                 <h2 className="text-3xl font-headline text-primary">PROVE YOU LOVE ME</h2>
                 <p className="text-6xl font-headline text-white">{proveCount}</p>
-                {proveCount >= 90 && <p className="text-xs text-primary/40 animate-pulse">ALMOST THERE...</p>}
               </div>
               <Button
                 onClick={handleProveClick}
-                className="absolute transition-all duration-200 h-24 w-48 bg-accent text-background text-lg font-bold rounded-2xl shadow-xl hover:scale-105"
+                className="absolute transition-all duration-200 h-24 w-48 bg-accent text-background text-lg font-bold rounded-2xl shadow-xl"
                 style={{ top: proveBtnPos.top, left: proveBtnPos.left, transform: 'translate(-50%, -50%)' }}
               >
                 PRESS IF YOU LOVE ME
@@ -623,22 +605,17 @@ export default function HeartsQuest() {
               <div className="text-center">
                 <Button 
                   onClick={handleLoveSpam}
-                  className="size-48 rounded-full bg-primary text-background font-bold text-xl shadow-[0_0_50px_rgba(216,180,254,0.4)] hover:scale-110 active:scale-95 transition-all"
+                  className="size-48 rounded-full bg-primary text-background font-bold text-xl shadow-[0_0_50px_rgba(216,180,254,0.4)]"
                 >
                   SPAM LOVE
                 </Button>
-                <p className="mt-4 text-xs text-primary/40 animate-pulse">DON'T LET HIM WIN</p>
               </div>
             </div>
           )}
           {step === "who_loves_result" && (
             <div className="text-center space-y-8 animate-in zoom-in duration-700">
-              <div className="flex justify-center gap-4">
-                <Heart className="size-16 text-primary fill-primary" />
-                <Heart className="size-16 text-accent fill-accent" />
-              </div>
               <h2 className="text-4xl font-headline italic">"We love each other equally."</h2>
-              <Button onClick={() => { setP1Love(0); setP2Love(0); finishNode(8, "who_loves_more"); }} className="bg-accent text-background">Node Synchronized</Button>
+              <Button onClick={() => finishNode(8, "who_loves_more")} className="bg-accent text-background">Node Synchronized</Button>
             </div>
           )}
           {step === "flag_game" && (
@@ -655,7 +632,7 @@ export default function HeartsQuest() {
           )}
           {step === "flag_success" && (
             <div className="text-center space-y-12 animate-in zoom-in duration-700">
-               <Heart className="size-48 text-primary fill-primary/30 mx-auto heart-pulse" />
+               <Activity className="size-48 text-primary mx-auto" />
                <Button onClick={() => finishNode(9, "flag_game")} className="bg-accent text-background">Node Synchronized</Button>
             </div>
           )}
@@ -696,10 +673,6 @@ export default function HeartsQuest() {
                   { q: "Do you steal blankets?", opts: ["Yes (Blanket Hog)", "Sometimes"] },
                   { q: "Would you survive a zombie apocalypse?", opts: ["Yes", "No"] },
                   { q: "Would you still love me if I was a worm?", opts: ["Obviously yes", "I'd keep you in a jar"] },
-                  { q: "Burp butterflies or fart glitter?", opts: ["Burp butterflies", "Fart glitter"] },
-                  { q: "If we're stranded on an island who survives?", opts: ["Me", "You"] },
-                  { q: "If we were in a rom-com:", opts: ["Main couple", "Chaotic side couple", "Argue in rain"] },
-                  { q: "Who fell first?", opts: ["Me", "You", "Same time"] }
                 ].map((item, i) => (
                   <div key={i} className="space-y-4 bg-secondary/10 p-6 rounded-2xl border border-primary/10">
                     <p className="text-lg font-medium">{item.q}</p>
@@ -721,13 +694,11 @@ export default function HeartsQuest() {
           )}
           {step === "final" && (
             <div className="text-center space-y-12 animate-in fade-in duration-1000 max-w-2xl mx-auto">
-              <Stars className="size-24 text-primary animate-pulse mx-auto" />
               <h1 className="text-7xl font-headline text-white tracking-tighter">100% Match</h1>
               <div className="bg-secondary/20 p-12 rounded-[3rem] border border-primary/20 space-y-6 backdrop-blur-xl">
                 <Heart className="size-20 text-primary mx-auto fill-primary/20" />
                 <p className="text-accent text-4xl font-headline italic leading-tight">"Idk but it looks like we're legally required to stay together forever."</p>
               </div>
-              <Button onClick={() => window.location.reload()} variant="ghost" className="text-primary/40 text-[10px] uppercase">Reset Simulation</Button>
             </div>
           )}
         </div>
