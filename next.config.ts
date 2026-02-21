@@ -8,9 +8,11 @@ const nextConfig: NextConfig = {
     unoptimized: true, // Required for static export
   },
   typescript: {
+    // Ignore errors during build to ensure the static export succeeds
     ignoreBuildErrors: true,
   },
   eslint: {
+    // Ignore linting during build to prevent exit code 1
     ignoreDuringBuilds: true,
   },
 };
