@@ -1,5 +1,10 @@
-# Firebase Studio
+# Hearts Quest
 
-This is a NextJS starter in Firebase Studio.
+A personalized Valentine's Day scavenger hunt and interactive experience mapped in the stars.
 
-To get started, take a look at src/app/page.tsx.
+## Deployment
+
+This project is configured for static export and deployed via GitHub Actions to GitHub Pages.
+
+To view the live site, ensure your GitHub repository settings are set to:
+**Settings > Pages > Build and deployment > Source: GitHub Actions**.
