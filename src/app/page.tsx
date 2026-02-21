@@ -98,8 +98,7 @@ export default function HeartsQuest() {
   // Heart Chase DVD Bouncing Logic
   const [chaseCount, setChaseCount] = useState(0);
   const [heartPos, setHeartPos] = useState({ x: 50, y: 50 });
-  const [heartVel, setHeartVel] = useState({ x: 0.5, y: 0.5 });
-  const chaseContainerRef = useRef<HTMLDivElement>(null);
+  const [heartVel, setHeartVel] = useState({ x: 0.6, y: 0.4 });
 
   // Love Proof Logic
   const [proveCount, setProveCount] = useState(0);
@@ -136,18 +135,18 @@ export default function HeartsQuest() {
   useEffect(() => {
     if (step !== "chase_heart") return;
     
-    const speedMultiplier = 1 + (chaseCount * 0.15);
+    const speedMultiplier = 1 + (chaseCount * 0.2);
     const interval = setInterval(() => {
       setHeartPos(prev => {
         let nextX = prev.x + heartVel.x * speedMultiplier;
         let nextY = prev.y + heartVel.y * speedMultiplier;
 
         const newVel = { ...heartVel };
-        if (nextX <= 5 || nextX >= 95) {
+        if (nextX <= 8 || nextX >= 92) {
           newVel.x *= -1;
           nextX = prev.x; 
         }
-        if (nextY <= 5 || nextY >= 95) {
+        if (nextY <= 8 || nextY >= 92) {
           newVel.y *= -1;
           nextY = prev.y;
         }
@@ -170,7 +169,7 @@ export default function HeartsQuest() {
     } else {
       setStep("chase_success");
       setChaseCount(0);
-      setHeartVel({ x: 0.5, y: 0.5 });
+      setHeartVel({ x: 0.6, y: 0.4 });
     }
   };
 
@@ -204,7 +203,7 @@ export default function HeartsQuest() {
     setProveCount(nextCount);
     if (nextCount >= 100) {
       setStep("prove_success");
-    } else if (nextCount % 10 === 0) {
+    } else {
       setProveBtnPos({
         top: `${Math.random() * 60 + 20}%`,
         left: `${Math.random() * 60 + 20}%`
@@ -215,13 +214,14 @@ export default function HeartsQuest() {
   const handleLoveSpam = () => {
     if (loveCountdown > 0) return;
     if (p1Love < 100) {
-      const nextP1 = Math.min(100, p1Love + 5);
+      const nextP1 = Math.min(100, p1Love + 4);
       setP1Love(nextP1);
+      // P2 follows P1 but never beats her, they end together
       if (nextP1 >= 100) {
         setP2Love(100);
-        setTimeout(() => setStep("who_loves_result"), 500);
+        setTimeout(() => setStep("who_loves_result"), 800);
       } else {
-        setP2Love(prev => Math.min(nextP1, prev + (Math.random() * 6)));
+        setP2Love(prev => Math.min(nextP1, prev + (Math.random() * 5)));
       }
     }
   };
@@ -229,6 +229,8 @@ export default function HeartsQuest() {
   useEffect(() => {
     if (step === "who_loves_more") {
       setLoveCountdown(10);
+      setP1Love(0);
+      setP2Love(0);
       const countInterval = setInterval(() => {
         setLoveCountdown(prev => {
           if (prev <= 1) {
@@ -482,7 +484,7 @@ export default function HeartsQuest() {
             </div>
           )}
           {step === "chase_heart" && (
-            <div ref={chaseContainerRef} className="relative w-full h-[75vh] bg-secondary/10 rounded-[5rem] border border-primary/20 overflow-hidden animate-in fade-in duration-500 shadow-3xl">
+            <div className="relative w-full h-[75vh] bg-secondary/10 rounded-[5rem] border border-primary/20 overflow-hidden animate-in fade-in duration-500 shadow-3xl">
               <div className="absolute top-12 left-1/2 -translate-x-1/2 text-center z-20 pointer-events-none">
                 <p className="text-xl uppercase tracking-[0.5em] text-primary/60 font-bold mb-4">Catch the bouncing heart</p>
                 <p className="text-6xl font-headline text-white">{11 - chaseCount} more times</p>
@@ -720,7 +722,9 @@ export default function HeartsQuest() {
               <h2 className="text-7xl font-headline text-primary">Affection Wheel</h2>
               <div className="relative flex justify-center py-20">
                 <div className="relative size-[600px]">
+                  {/* Wheel Pointer */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-8 z-30 w-12 h-20 bg-accent rotate-180" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
+                  
                   <div className="w-full h-full rounded-full border-[16px] border-primary/20 overflow-hidden relative shadow-3xl" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)' }}>
                     <svg viewBox="0 0 100 100" className="w-full h-full">
                       {wheelOptions.map((opt, i) => {
@@ -731,12 +735,30 @@ export default function HeartsQuest() {
                         const y1 = 50 + 50 * Math.sin((Math.PI * startAngle) / 180);
                         const x2 = 50 + 50 * Math.cos((Math.PI * endAngle) / 180);
                         const y2 = 50 + 50 * Math.sin((Math.PI * endAngle) / 180);
+                        
                         return (
                           <g key={i}>
-                            <path d={`M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`} fill={i % 2 === 0 ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--accent) / 0.15)'} />
-                            <text x="50" y="18" transform={`rotate(${i * angle + angle / 2} 50 50)`} fill="white" fontSize="2.2" textAnchor="middle" className="font-bold pointer-events-none">
-                              {opt}
-                            </text>
+                            <path 
+                              d={`M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`} 
+                              fill={i % 2 === 0 ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--accent) / 0.15)'} 
+                              stroke="hsl(var(--primary) / 0.2)"
+                              strokeWidth="0.2"
+                            />
+                            {/* Wrapping Text inside SVG slice using foreignObject */}
+                            <foreignObject
+                              x="30"
+                              y="8"
+                              width="40"
+                              height="22"
+                              transform={`rotate(${i * angle + angle / 2} 50 50)`}
+                              className="overflow-visible"
+                            >
+                              <div className="w-full h-full flex items-center justify-center text-center px-1">
+                                <span className="text-[3px] leading-[1.1] font-bold text-white uppercase break-words drop-shadow-sm">
+                                  {opt}
+                                </span>
+                              </div>
+                            </foreignObject>
                           </g>
                         );
                       })}
