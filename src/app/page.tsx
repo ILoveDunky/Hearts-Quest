@@ -129,7 +129,7 @@ export default function HeartsQuest() {
     setStep("map");
   };
 
-  // Heart Chase Bouncing Animation
+  // Heart Chase Bouncing Animation (DVD Style)
   useEffect(() => {
     if (step !== "chase_heart") return;
     
@@ -140,13 +140,14 @@ export default function HeartsQuest() {
         let nextY = prev.y + heartVel.y * speedMultiplier;
 
         const newVel = { ...heartVel };
+        // Boundary collision detection for DVD effect (keeping heart inside the container)
         if (nextX <= 5 || nextX >= 95) {
           newVel.x *= -1;
-          nextX = prev.x; // prevent getting stuck
+          nextX = prev.x; 
         }
         if (nextY <= 5 || nextY >= 95) {
           newVel.y *= -1;
-          nextY = prev.y; // prevent getting stuck
+          nextY = prev.y;
         }
         
         if (newVel.x !== heartVel.x || newVel.y !== heartVel.y) {
@@ -167,7 +168,7 @@ export default function HeartsQuest() {
     } else {
       setStep("chase_success");
       setChaseCount(0);
-      setHeartVel({ x: 0.5, y: 0.5 }); // reset velocity for potential replay
+      setHeartVel({ x: 0.5, y: 0.5 });
     }
   };
 
@@ -219,7 +220,6 @@ export default function HeartsQuest() {
         setP2Love(100);
         setTimeout(() => setStep("who_loves_result"), 500);
       } else {
-        // P2 keeps up but stays slightly behind or equal
         setP2Love(prev => Math.min(nextP1, prev + (Math.random() * 6)));
       }
     }
