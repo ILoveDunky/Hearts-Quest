@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { StarField } from "@/components/StarField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,16 +92,22 @@ export default function HeartsQuest() {
   const [wheelResult, setWheelResult] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
 
+  // Heart Chase DVD Bouncing Logic
   const [chaseCount, setChaseCount] = useState(0);
-  const [heartPos, setHeartPos] = useState({ top: "50%", left: "50%" });
+  const [heartPos, setHeartPos] = useState({ x: 50, y: 50 });
+  const [heartVel, setHeartVel] = useState({ x: 0.5, y: 0.5 });
+  const chaseContainerRef = useRef<HTMLDivElement>(null);
 
+  // Love Proof Logic
   const [proveCount, setProveCount] = useState(0);
   const [proveBtnPos, setProveBtnPos] = useState({ top: "50%", left: "50%" });
 
+  // Love Battle Logic
   const [p1Love, setP1Love] = useState(0);
   const [p2Love, setP2Love] = useState(0);
   const [loveCountdown, setLoveCountdown] = useState(10);
 
+  // Relationship Stats Logic
   const [relStats, setRelStats] = useState({
     trust: 50,
     fun: 50,
@@ -121,6 +127,48 @@ export default function HeartsQuest() {
     }
     setUnlockedIndex(Math.max(unlockedIndex, nextIndex));
     setStep("map");
+  };
+
+  // Heart Chase Bouncing Animation
+  useEffect(() => {
+    if (step !== "chase_heart") return;
+    
+    const speedMultiplier = 1 + (chaseCount * 0.15);
+    const interval = setInterval(() => {
+      setHeartPos(prev => {
+        let nextX = prev.x + heartVel.x * speedMultiplier;
+        let nextY = prev.y + heartVel.y * speedMultiplier;
+
+        const newVel = { ...heartVel };
+        if (nextX <= 5 || nextX >= 95) {
+          newVel.x *= -1;
+          nextX = prev.x; // prevent getting stuck
+        }
+        if (nextY <= 5 || nextY >= 95) {
+          newVel.y *= -1;
+          nextY = prev.y; // prevent getting stuck
+        }
+        
+        if (newVel.x !== heartVel.x || newVel.y !== heartVel.y) {
+          setHeartVel(newVel);
+        }
+
+        return { x: nextX, y: nextY };
+      });
+    }, 16);
+
+    return () => clearInterval(interval);
+  }, [step, heartVel, chaseCount]);
+
+  const handleChaseClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (chaseCount < 10) {
+      setChaseCount(prev => prev + 1);
+    } else {
+      setStep("chase_success");
+      setChaseCount(0);
+      setHeartVel({ x: 0.5, y: 0.5 }); // reset velocity for potential replay
+    }
   };
 
   const handleQ1 = (e: React.FormEvent) => {
@@ -148,19 +196,6 @@ export default function HeartsQuest() {
     }
   };
 
-  const handleChaseClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (chaseCount < 10) {
-      setChaseCount(prev => prev + 1);
-      const newTop = Math.random() * 70 + 15;
-      const newLeft = Math.random() * 70 + 15;
-      setHeartPos({ top: `${newTop}%`, left: `${newLeft}%` });
-    } else {
-      setStep("chase_success");
-      setChaseCount(0);
-    }
-  };
-
   const handleProveClick = () => {
     const nextCount = proveCount + 1;
     setProveCount(nextCount);
@@ -176,8 +211,17 @@ export default function HeartsQuest() {
 
   const handleLoveSpam = () => {
     if (loveCountdown > 0) return;
-    if (p1Love < 100 && p2Love < 100) {
-      setP1Love(prev => Math.min(100, prev + 5));
+    if (p1Love < 100) {
+      const nextP1 = Math.min(100, p1Love + 5);
+      setP1Love(nextP1);
+      // Synchronize P2 love - it chases P1 but only hits 100 when P1 does
+      if (nextP1 >= 100) {
+        setP2Love(100);
+        setTimeout(() => setStep("who_loves_result"), 500);
+      } else {
+        // P2 keeps up but stays slightly behind or equal
+        setP2Love(prev => Math.min(nextP1, prev + (Math.random() * 6)));
+      }
     }
   };
 
@@ -193,29 +237,9 @@ export default function HeartsQuest() {
           return prev - 1;
         });
       }, 1000);
-
-      const battleInterval = setInterval(() => {
-        setLoveCountdown(current => {
-          if (current === 0) {
-            setP2Love(prev => {
-              const next = Math.min(100, prev + (Math.random() * 4));
-              if (next >= 100 && p1Love >= 100) {
-                setStep("who_loves_result");
-                clearInterval(battleInterval);
-              }
-              return next;
-            });
-          }
-          return current;
-        });
-      }, 100);
-
-      return () => {
-        clearInterval(countInterval);
-        clearInterval(battleInterval);
-      };
+      return () => clearInterval(countInterval);
     }
-  }, [step, p1Love]);
+  }, [step]);
 
   const updateRel = (changes: Partial<typeof relStats>) => {
     setRelStats(prev => {
@@ -394,7 +418,7 @@ export default function HeartsQuest() {
             <div className="space-y-16 animate-in slide-in-from-bottom duration-500">
               <h2 className="text-7xl font-headline text-primary text-center">What was the first profile pictures we matched?</h2>
               <form onSubmit={handleQ1} className="space-y-10">
-                <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type your answer here..." className="bg-secondary/20 border-primary/30 h-32 text-5xl rounded-3xl text-center" />
+                <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type your answer here..." className="bg-secondary/20 border-primary/30 h-32 text-6xl rounded-3xl text-center" />
                 <Button type="submit" className="w-full h-24 bg-accent text-background text-4xl font-bold rounded-2xl">Check Memory</Button>
               </form>
             </div>
@@ -410,7 +434,7 @@ export default function HeartsQuest() {
             <div className="space-y-16 animate-in slide-in-from-bottom duration-500">
               <h2 className="text-7xl font-headline text-primary text-center">What was the first game we played together?</h2>
               <form onSubmit={handleQ2} className="space-y-10">
-                <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Game title..." className="bg-secondary/20 border-primary/30 h-32 text-5xl rounded-3xl text-center" />
+                <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Game title..." className="bg-secondary/20 border-primary/30 h-32 text-6xl rounded-3xl text-center" />
                 <Button type="submit" className="w-full h-24 bg-accent text-background text-4xl font-bold rounded-2xl">Submit</Button>
               </form>
             </div>
@@ -426,7 +450,7 @@ export default function HeartsQuest() {
             <div className="space-y-16 animate-in slide-in-from-bottom duration-500">
               <h2 className="text-7xl font-headline text-primary text-center">What was the first thing I said to you when we first met?</h2>
               <form onSubmit={handleQ3} className="space-y-10">
-                <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="The exact phrase..." className="bg-secondary/20 border-primary/30 h-32 text-5xl rounded-3xl text-center" />
+                <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="The exact phrase..." className="bg-secondary/20 border-primary/30 h-32 text-6xl rounded-3xl text-center" />
                 <Button type="submit" className="w-full h-24 bg-accent text-background text-4xl font-bold rounded-2xl">Answer</Button>
               </form>
             </div>
@@ -439,21 +463,20 @@ export default function HeartsQuest() {
             </div>
           )}
           {step === "chase_heart" && (
-            <div className="relative w-full h-[75vh] bg-secondary/10 rounded-[5rem] border border-primary/20 overflow-hidden animate-in fade-in duration-500 shadow-3xl">
+            <div ref={chaseContainerRef} className="relative w-full h-[75vh] bg-secondary/10 rounded-[5rem] border border-primary/20 overflow-hidden animate-in fade-in duration-500 shadow-3xl">
               <div className="absolute top-12 left-1/2 -translate-x-1/2 text-center z-20 pointer-events-none">
-                <p className="text-xl uppercase tracking-[0.5em] text-primary/60 font-bold mb-4">Catch the heart</p>
+                <p className="text-xl uppercase tracking-[0.5em] text-primary/60 font-bold mb-4">Catch the bouncing heart</p>
                 <p className="text-6xl font-headline text-white">{11 - chaseCount} more times</p>
               </div>
               <button 
                 onClick={handleChaseClick} 
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all cursor-pointer p-8"
+                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-none cursor-pointer p-8"
                 style={{ 
-                  top: heartPos.top, 
-                  left: heartPos.left,
-                  transition: `all ${Math.max(600 - (chaseCount * 50), 100)}ms cubic-bezier(0.34, 1.56, 0.64, 1)`
+                  left: `${heartPos.x}%`, 
+                  top: `${heartPos.y}%`,
                 }}
               >
-                <Heart className="text-primary fill-primary/40 drop-shadow-[0_0_30px_rgba(216,180,254,0.7)] size-36 animate-pulse" />
+                <Heart className="text-primary fill-primary/40 drop-shadow-[0_0_30px_rgba(216,180,254,0.7)] size-36" />
               </button>
             </div>
           )}
@@ -512,7 +535,7 @@ export default function HeartsQuest() {
                   {freeQuizStep === 5 && "On a scale of 1-10 how likely would it be that I would survive a horror movie?"}
                 </p>
                 <form onSubmit={handleAboutMeFree} className="space-y-10">
-                  <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Tell me your thoughts..." className="bg-secondary/20 border-primary/30 h-32 text-4xl rounded-3xl text-center" />
+                  <Input autoFocus value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Tell me your thoughts..." className="bg-secondary/20 border-primary/30 h-32 text-6xl rounded-3xl text-center" />
                   <Button type="submit" className="w-full h-24 bg-accent text-background text-4xl font-bold rounded-3xl">Next Question</Button>
                 </form>
               </div>
