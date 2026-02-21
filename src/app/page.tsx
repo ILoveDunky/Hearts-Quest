@@ -22,7 +22,8 @@ import {
   Calculator,
   CheckCircle2,
   XCircle,
-  Activity
+  Activity,
+  FastForward
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -91,6 +92,8 @@ export default function HeartsQuest() {
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelResult, setWheelResult] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
+  const [extraSpins, setExtraSpins] = useState(0);
+  const [wonPrizes, setWonPrizes] = useState<string[]>([]);
 
   // Heart Chase DVD Bouncing Logic
   const [chaseCount, setChaseCount] = useState(0);
@@ -140,7 +143,6 @@ export default function HeartsQuest() {
         let nextY = prev.y + heartVel.y * speedMultiplier;
 
         const newVel = { ...heartVel };
-        // Boundary collision detection for DVD effect (keeping heart inside the container)
         if (nextX <= 5 || nextX >= 95) {
           newVel.x *= -1;
           nextX = prev.x; 
@@ -215,7 +217,6 @@ export default function HeartsQuest() {
     if (p1Love < 100) {
       const nextP1 = Math.min(100, p1Love + 5);
       setP1Love(nextP1);
-      // Synchronize P2 love - it chases P1 but only hits 100 when P1 does
       if (nextP1 >= 100) {
         setP2Love(100);
         setTimeout(() => setStep("who_loves_result"), 500);
@@ -290,9 +291,13 @@ export default function HeartsQuest() {
   };
 
   const wheelOptions = [
-    "1 full minute of compliments",
-    "Try a stupid pick up line",
-    "1 hour of Overwatch"
+    "You pick the music",
+    "2 spins",
+    "You choose my discord status and bio",
+    "I'll agree with whatever you say for the next 5 minutes",
+    "You get to ask me any question you want",
+    "I'll send whatever message you want in Fam Chat",
+    "I'll read your smut book to you before bed"
   ];
 
   const spinWheel = () => {
@@ -306,8 +311,22 @@ export default function HeartsQuest() {
     const extraRotation = targetOffset + (360 * 5); 
     const newRotation = rotation + extraRotation;
     setRotation(newRotation);
+
     setTimeout(() => {
-      setWheelResult(wheelOptions[randomIndex]);
+      const result = wheelOptions[randomIndex];
+      if (result === "2 spins") {
+        setExtraSpins(2);
+        setWheelResult("BONUS: 2 EXTRA SPINS UNLOCKED!");
+      } else {
+        setWonPrizes(prev => [...prev, result]);
+        if (extraSpins > 0) {
+          const nextSpins = extraSpins - 1;
+          setExtraSpins(nextSpins);
+          setWheelResult(`Won: ${result}! (${nextSpins} spins left)`);
+        } else {
+          setWheelResult(result);
+        }
+      }
       setWheelSpinning(false);
     }, 4000);
   };
@@ -329,7 +348,7 @@ export default function HeartsQuest() {
   }, []);
 
   return (
-    <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-300 overflow-hidden">
+    <main className="relative min-h-screen flex items-center justify-center p-6 transition-all duration-300 overflow-hidden text-foreground">
       <StarField intensity={step === "map" || step === "final" || step === "calculating" ? "high" : "normal"} />
 
       <div className="z-10 w-full max-w-7xl py-12 h-full flex flex-col justify-center">
@@ -604,6 +623,13 @@ export default function HeartsQuest() {
           )}
           {step === "prove_love" && (
             <div className="relative w-full h-[75vh] flex flex-col items-center justify-center animate-in fade-in duration-500">
+              <Button 
+                variant="ghost" 
+                onClick={() => setStep("prove_success")} 
+                className="absolute top-4 right-4 text-primary/40 hover:text-primary text-xl flex items-center gap-2"
+              >
+                <FastForward className="size-6" /> Skip Node
+              </Button>
               <div className="text-center mb-16 space-y-8">
                 <h2 className="text-7xl font-headline text-primary uppercase tracking-tighter">PROVE YOU LOVE ME</h2>
                 <p className="text-[12rem] font-headline text-white drop-shadow-[0_0_40px_rgba(255,255,255,0.4)] leading-none">{proveCount}</p>
@@ -697,18 +723,48 @@ export default function HeartsQuest() {
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-8 z-30 w-12 h-20 bg-accent rotate-180" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }} />
                   <div className="w-full h-full rounded-full border-[16px] border-primary/20 overflow-hidden relative shadow-3xl" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)' }}>
                     <svg viewBox="0 0 100 100" className="w-full h-full">
-                      {wheelOptions.map((opt, i) => (
-                        <g key={i}>
-                          <path d={`M 50 50 L ${50 + 50 * Math.cos((Math.PI * (i * 120 - 90)) / 180)} ${50 + 50 * Math.sin((Math.PI * (i * 120 - 90)) / 180)} A 50 50 0 0 1 ${50 + 50 * Math.cos((Math.PI * ((i + 1) * 120 - 90)) / 180)} ${50 + 50 * Math.sin((Math.PI * ((i + 1) * 120 - 90)) / 180)} Z`} fill={i === 0 ? 'hsl(var(--primary) / 0.15)' : i === 1 ? 'hsl(var(--accent) / 0.15)' : 'hsl(var(--secondary) / 0.3)'} />
-                          <text x="50" y="25" transform={`rotate(${i * 120 + 60} 50 50)`} fill="white" fontSize="3" textAnchor="middle" className="font-bold">{opt}</text>
-                        </g>
-                      ))}
+                      {wheelOptions.map((opt, i) => {
+                        const angle = 360 / wheelOptions.length;
+                        const startAngle = i * angle - 90;
+                        const endAngle = (i + 1) * angle - 90;
+                        const x1 = 50 + 50 * Math.cos((Math.PI * startAngle) / 180);
+                        const y1 = 50 + 50 * Math.sin((Math.PI * startAngle) / 180);
+                        const x2 = 50 + 50 * Math.cos((Math.PI * endAngle) / 180);
+                        const y2 = 50 + 50 * Math.sin((Math.PI * endAngle) / 180);
+                        return (
+                          <g key={i}>
+                            <path d={`M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`} fill={i % 2 === 0 ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--accent) / 0.15)'} />
+                            <text x="50" y="18" transform={`rotate(${i * angle + angle / 2} 50 50)`} fill="white" fontSize="2.2" textAnchor="middle" className="font-bold pointer-events-none">
+                              {opt}
+                            </text>
+                          </g>
+                        );
+                      })}
                     </svg>
                   </div>
                 </div>
               </div>
-              <Button disabled={wheelSpinning} onClick={spinWheel} className="w-full h-32 bg-accent text-background font-bold text-4xl rounded-[2.5rem] shadow-3xl">{wheelSpinning ? "Spinning..." : "Spin the Wheel"}</Button>
-              {wheelResult && !wheelSpinning && <Button variant="ghost" onClick={() => finishNode(10, "wheel")} className="text-primary/60 text-2xl mt-8">Continue</Button>}
+              
+              {wheelResult && (
+                <div className="bg-secondary/20 p-8 rounded-3xl border border-primary/20 mb-8 animate-in zoom-in duration-300">
+                  <p className="text-4xl font-headline text-accent italic">{wheelResult}</p>
+                </div>
+              )}
+
+              <Button disabled={wheelSpinning} onClick={spinWheel} className="w-full h-32 bg-accent text-background font-bold text-4xl rounded-[2.5rem] shadow-3xl">
+                {wheelSpinning ? "Spinning..." : (extraSpins > 0 ? `Spin Bonus! (${extraSpins} left)` : "Spin the Wheel")}
+              </Button>
+
+              {wheelResult && !wheelSpinning && extraSpins === 0 && (
+                <div className="mt-8 space-y-4">
+                  <div className="flex flex-wrap justify-center gap-4">
+                    {wonPrizes.map((p, i) => (
+                      <span key={i} className="px-6 py-2 bg-primary/20 text-primary rounded-full text-xl font-bold">🎁 {p}</span>
+                    ))}
+                  </div>
+                  <Button variant="ghost" onClick={() => finishNode(10, "wheel")} className="text-primary/60 text-2xl mt-4">Continue Quest</Button>
+                </div>
+              )}
             </div>
           )}
           {step === "compatibility" && (
